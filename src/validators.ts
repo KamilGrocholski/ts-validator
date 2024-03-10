@@ -102,6 +102,47 @@ class NullishV<T> extends Parser<T | null | undefined, T | null | undefined> {
   }
 }
 
+class DateV extends Parser<Date, Date> {
+  private _min: Date | undefined;
+  private _max: Date | undefined;
+
+  constructor() {
+    super();
+  }
+
+  parse(value: unknown): Result<Date> {
+    // @ts-ignore
+    const date = new Date(value);
+    if (isNaN(date.getTime())) {
+      return { success: false, error: "Invalid date format" };
+    }
+    if (this._min && date < this._min) {
+      return {
+        success: false,
+        error: "Date < min",
+      };
+    }
+
+    if (this._max && date > this._max) {
+      return {
+        success: false,
+        error: "Date > max",
+      };
+    }
+    return { success: true, out: date };
+  }
+
+  min(date: Date) {
+    this._min = date;
+    return this;
+  }
+
+  max(date: Date) {
+    this._max = date;
+    return this;
+  }
+}
+
 class BooleanV extends Parser<boolean, boolean> {
   constructor() {
     super();
@@ -370,6 +411,9 @@ class RecordV<T extends UnknownVParser> extends Parser<
   }
 }
 
+export function date() {
+  return new DateV();
+}
 export function boolean() {
   return new BooleanV();
 }

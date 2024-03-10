@@ -3,6 +3,79 @@ import { describe, expect, test } from "bun:test";
 import { InferIn, v } from "./";
 
 describe("Validators", () => {
+  describe("Date validator", () => {
+    test("Async date", async () => {
+      const result = await v.date().parseAsync(new Date());
+      expect(result.success).toBe(true);
+    });
+
+    test("Valid date", () => {
+      const result = v.date().parse(new Date());
+      expect(result.success).toBe(true);
+    });
+
+    test("Invalid date", () => {
+      const result = v.date().parse("invalida");
+      expect(result.success).toBe(false);
+    });
+
+    test("Invalid min date", () => {
+      const now = Date.now();
+      const result = v
+        .date()
+        .min(new Date(now + 1000))
+        .parse(now);
+      expect(result.success).toBe(false);
+    });
+
+    test("Valid min date", () => {
+      const now = Date.now();
+      const result = v
+        .date()
+        .min(new Date(now - 1000))
+        .parse(now);
+      expect(result.success).toBe(true);
+    });
+
+    test("Invalid max date", () => {
+      const now = Date.now();
+      const result = v
+        .date()
+        .max(new Date(now - 1000))
+        .parse(now);
+      expect(result.success).toBe(false);
+    });
+
+    test("Valid max date", () => {
+      const now = Date.now();
+      const result = v
+        .date()
+        .max(new Date(now + 1000))
+        .parse(now);
+      expect(result.success).toBe(true);
+    });
+
+    test("Optional date", () => {
+      const result = v.optional(v.date()).parse(undefined);
+      expect(result.success).toBe(true);
+    });
+
+    test("Optional date with default", () => {
+      const result = v.optional(v.date(), new Date()).parse(undefined);
+      expect(result.success).toBe(true);
+    });
+
+    test("Nullable date", () => {
+      const result = v.nullable(v.date()).parse(null);
+      expect(result.success).toBe(true);
+    });
+
+    test("Nullish date", () => {
+      const result = v.nullish(v.date()).parse(null);
+      expect(result.success).toBe(true);
+    });
+  });
+
   describe("String validator", () => {
     test("Async string", async () => {
       const result = await v.string().parseAsync("ok");
