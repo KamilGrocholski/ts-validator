@@ -28,6 +28,14 @@ const userSchema = v.object({
 type User = InferOut<typeof userSchema>; // { name: string, age: "Y" | "N" }
 ```
 
+### DateV
+
+```typescript
+const schema = v.date();
+const result = schema.parse(new Date("2024-03-10T21:18:51.222Z"));
+console.log(result); // { success: true, out: "2024-03-10T21:18:51.222Z" }
+```
+
 ### BooleanV
 
 ```typescript
