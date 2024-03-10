@@ -76,10 +76,10 @@ const result = schema.parse({
 console.log(result); // { success: true, out: { a: "String", b: 1234 } }
 ```
 
-### OrV
+### UnionV
 
 ```typescript
-const schema = v.or([v.number(), v.string()]);
+const schema = v.union([v.number(), v.string()]);
 const result1 = schema.parse([1]);
 const result2 = schema.parse(["String"]);
 console.log(result1); // { success: true, out: [1] }

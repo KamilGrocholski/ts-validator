@@ -203,7 +203,7 @@ describe("Validators", () => {
       const result = v
         .object({
           name: v.string(),
-          role: v.or([v.literal("USER"), v.literal("ADMIN")]),
+          role: v.union([v.literal("USER"), v.literal("ADMIN")]),
         })
         .transform((value) => {
           if (value.role === "ADMIN") {
@@ -314,67 +314,67 @@ describe("Validators", () => {
     });
   });
 
-  describe("Or Validator", () => {
-    test("Async or", async () => {
-      const result = await v.or([v.string(), v.number()]).parseAsync("ok");
+  describe("Union Validator", () => {
+    test("Async union", async () => {
+      const result = await v.union([v.string(), v.number()]).parseAsync("ok");
       expect(result.success).toBe(true);
     });
 
-    test("Valid number or string", () => {
-      const schema = v.or([v.number(), v.string()]);
+    test("Valid number union string", () => {
+      const schema = v.union([v.number(), v.string()]);
       const result = schema.parse(42);
       expect(result.success).toBe(true);
     });
 
-    test("Valid string or boolean", () => {
-      const schema = v.or([v.string(), v.boolean()]);
+    test("Valid string union boolean", () => {
+      const schema = v.union([v.string(), v.boolean()]);
       const result = schema.parse("hello");
       expect(result.success).toBe(true);
     });
 
-    test("Invalid value not in or", () => {
-      const schema = v.or([v.number(), v.string()]);
+    test("Invalid value not in union", () => {
+      const schema = v.union([v.number(), v.string()]);
       const result = schema.parse(true);
       expect(result.success).toBe(false);
     });
 
-    test("Valid non empty object or null", () => {
-      const schema = v.or([v.object({ key: v.number() }), v.literal(null)]);
+    test("Valid non empty object union null", () => {
+      const schema = v.union([v.object({ key: v.number() }), v.literal(null)]);
       const result = schema.parse(null);
       expect(result.success).toBe(true);
     });
 
-    test("Invalid non empty object not in or", () => {
-      const schema = v.or([v.object({ key: v.number() }), v.literal(null)]);
+    test("Invalid non empty object not in union", () => {
+      const schema = v.union([v.object({ key: v.number() }), v.literal(null)]);
       const result = schema.parse({ key: "value" });
       expect(result.success).toBe(false);
     });
 
-    test("Optional or", () => {
-      const result = v.optional(v.or([])).parse(undefined);
+    test("Optional union", () => {
+      const result = v.optional(v.union([])).parse(undefined);
       expect(result.success).toBe(true);
     });
 
-    test("Optional or with default", () => {
+    test("Optional union with default", () => {
       const result = v
-        .optional(v.or([v.string(), v.number()]), "okej")
+        .optional(v.union([v.string(), v.number()]), "okej")
         .parse(undefined);
       expect(result.success).toBe(true);
     });
 
-    test("Nullable or", () => {
-      const result = v.nullable(v.or([])).parse(null);
+    test("Nullable union", () => {
+      const result = v.nullable(v.union([])).parse(null);
       expect(result.success).toBe(true);
     });
 
-    test("Nullish or", () => {
-      const result = v.nullish(v.or([v.string(), v.number()])).parse(null);
+    test("Nullish union", () => {
+      const result = v.nullish(v.union([v.string(), v.number()])).parse(null);
       expect(result.success).toBe(true);
     });
 
-    test("Transform or", () => {
+    test("Transfunionm union", () => {
       const result = v
-        .or([v.string(), v.number()])
+        .union([v.string(), v.number()])
         .transform((value) => (typeof value === "string" ? "NIE" : "TAK"))
         .parse("ok");
       expect(result.success).toBe(true);

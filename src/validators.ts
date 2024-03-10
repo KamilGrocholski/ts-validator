@@ -2,20 +2,22 @@ export type Result<TOut> =
   | { success: true; out: TOut }
   | { success: false; error: unknown };
 
-export type InferIn<T extends Parser<unknown, unknown>> = T extends Parser<
+export type UnknownVParser = Parser<unknown, unknown>;
+
+export type InferIn<T extends UnknownVParser> = T extends Parser<
   infer U,
   infer _
 >
-  ? U extends { [key: string]: Parser<unknown, unknown> }
+  ? U extends { [key: string]: UnknownVParser }
     ? { [Key in keyof U]: InferIn<U[Key]> }
     : U
   : never;
 
-export type InferOut<T extends Parser<unknown, unknown>> = T extends Parser<
+export type InferOut<T extends UnknownVParser> = T extends Parser<
   infer _,
   infer U
 >
-  ? U extends { [key: string]: Parser<unknown, unknown> }
+  ? U extends { [key: string]: UnknownVParser }
     ? { [Key in keyof U]: InferOut<U[Key]> }
     : U
   : never;
@@ -209,9 +211,7 @@ class ArrayV<T> extends Parser<T[], T[]> {
   }
 }
 
-class ObjectV<
-  T extends { [key: string]: Parser<unknown, unknown> },
-> extends Parser<
+class ObjectV<T extends { [key: string]: UnknownVParser }> extends Parser<
   {
     [Key in keyof T]: InferIn<T[Key]>;
   },
@@ -245,12 +245,41 @@ class ObjectV<
 
     return { success: true, out };
   }
+
+  pick<TPicked extends keyof T>(picked: { [Key in TPicked]: boolean }): ObjectV<
+    Pick<T, TPicked>
+  > {
+    const pickedShape = {} as { [Key in TPicked]: T[Key] };
+    for (const key in picked) {
+      pickedShape[key] = this.shape[key];
+    }
+    return new ObjectV(pickedShape);
+  }
+
+  omit<TOmit extends keyof T>(omit: { [Key in TOmit]: boolean }): ObjectV<
+    Omit<T, TOmit>
+  > {
+    const omitShape = {} as { [Key in keyof T]: T[Key] };
+    for (const key in this.shape) {
+      // @ts-ignore
+      if (omit[key] !== true) {
+        omitShape[key] = this.shape[key];
+      }
+    }
+    return new ObjectV(omitShape);
+  }
+
+  partial(): ObjectV<{ [Key in keyof T]: OptionalV<T[Key]> }> {
+    const shallowOptional: { [Key in keyof T]: OptionalV<T[Key]> } = {} as any;
+    for (const key in this.shape) {
+      // @ts-ignore
+      shallowOptional[key] = new OptionalV(this.shape[key]);
+    }
+    return new ObjectV(shallowOptional);
+  }
 }
 
-class OrV<T extends Parser<unknown, unknown>> extends Parser<
-  InferIn<T>,
-  InferOut<T>
-> {
+class UnionV<T extends UnknownVParser> extends Parser<InferIn<T>, InferOut<T>> {
   constructor(private parsers: T[]) {
     super();
   }
@@ -280,15 +309,13 @@ class LiteralV<
   }
 }
 
-type TupleVItems = [Parser<unknown, unknown>, ...Parser<unknown, unknown>[]];
+type TupleVItems = [UnknownVParser, ...UnknownVParser[]];
 type AssertArray<T> = T extends unknown[] ? T : never;
 type TupleVOut<T extends TupleVItems | []> = AssertArray<{
-  [K in keyof T]: T[K] extends Parser<unknown, unknown>
-    ? InferOut<T[K]>
-    : never;
+  [K in keyof T]: T[K] extends UnknownVParser ? InferOut<T[K]> : never;
 }>;
 type TupleVIn<T extends TupleVItems | []> = AssertArray<{
-  [K in keyof T]: T[K] extends Parser<unknown, unknown> ? InferIn<T[K]> : never;
+  [K in keyof T]: T[K] extends UnknownVParser ? InferIn<T[K]> : never;
 }>;
 class TupleV<T extends TupleVItems> extends Parser<TupleVIn<T>, TupleVOut<T>> {
   constructor(private parsers: T) {
@@ -313,7 +340,7 @@ class TupleV<T extends TupleVItems> extends Parser<TupleVIn<T>, TupleVOut<T>> {
   }
 }
 
-class RecordV<T extends Parser<unknown, unknown>> extends Parser<
+class RecordV<T extends UnknownVParser> extends Parser<
   {
     [key: string]: InferIn<T>;
   },
@@ -367,13 +394,11 @@ export function nullish<T>(parser: InstanceType<typeof Parser<T, T>>) {
 export function array<T>(parser: InstanceType<typeof Parser<T, T>>) {
   return new ArrayV<T>(parser);
 }
-export function object<T extends { [key: string]: Parser<unknown, unknown> }>(
-  shape: T,
-) {
+export function object<T extends { [key: string]: UnknownVParser }>(shape: T) {
   return new ObjectV<T>(shape);
 }
-export function or<T extends Parser<unknown, unknown>>(parsers: T[]) {
-  return new OrV<T>(parsers);
+export function union<T extends UnknownVParser>(parsers: T[]) {
+  return new UnionV<T>(parsers);
 }
 export function literal<
   const T extends string | number | boolean | null | undefined,
@@ -383,6 +408,6 @@ export function literal<
 export function tuple<T extends TupleVItems>(parsers: T) {
   return new TupleV<T>(parsers);
 }
-export function record<T extends Parser<unknown, unknown>>(parser: T) {
+export function record<T extends UnknownVParser>(parser: T) {
   return new RecordV<T>(parser);
 }
