@@ -34,6 +34,18 @@ class NullableV<T> extends Parser<T | null> {
   }
 }
 
+class NullishV<T> extends Parser<T | null | undefined> {
+  constructor(private parser: InstanceType<typeof Parser<T>>) {
+    super();
+  }
+
+  parse(value: unknown): Result<T | null | undefined> {
+    if (value === null || value === undefined)
+      return { success: true, out: value };
+    return this.parser.parse(value);
+  }
+}
+
 class BooleanV extends Parser<boolean> {
   constructor() {
     super();
@@ -203,30 +215,33 @@ class LiteralV<
   }
 }
 
-// class TuppleV<const T extends Parser<unknown>[]> extends Parser<
-//   Infer<T[number]>[]
-// > {
-//   constructor(private parsers: T) {
-//     super();
-//   }
+type TupleVItems = [Parser<unknown>, ...Parser<unknown>[]];
+type AssertArray<T> = T extends any[] ? T : never;
+type TupleVOut<T extends TupleVItems | []> = AssertArray<{
+  [K in keyof T]: T[K] extends Parser<unknown> ? Infer<T[K]> : never;
+}>;
+class TupleV<T extends TupleVItems> extends Parser<TupleVOut<T>> {
+  constructor(private parsers: T) {
+    super();
+  }
 
-//   parse(value: unknown): Result<Infer<T[number]>[]> {
-//     if (!Array.isArray(value)) return { success: false, error: `Not array` };
-//     if (value.length !== this.parsers.length)
-//       return { success: false, error: `Not exact length` };
+  parse(value: unknown): Result<TupleVOut<T>> {
+    if (!Array.isArray(value)) return { success: false, error: `Not array` };
+    if (value.length !== this.parsers.length)
+      return { success: false, error: `Not exact length` };
 
-//     const out = [];
+    const out = [];
 
-//     for (let i = 0; i < this.parsers.length; ++i) {
-//       const res = this.parsers[i].parse(value[i]);
-//       if (!res.success) return { success: false, error: "" };
-//       out[i] = res.out;
-//     }
+    for (let i = 0; i < this.parsers.length; ++i) {
+      const res = this.parsers[i].parse(value[i]);
+      if (!res.success) return { success: false, error: "" };
+      out[i] = res.out;
+    }
 
-//     // @ts-ignore
-//     return { success: true, out };
-//   }
-// }
+    // @ts-ignore
+    return { success: true, out };
+  }
+}
 
 export function boolean() {
   return new BooleanV();
@@ -243,6 +258,9 @@ export function optional<T>(parser: InstanceType<typeof Parser<T>>) {
 export function nullable<T>(parser: InstanceType<typeof Parser<T>>) {
   return new NullableV<T>(parser);
 }
+export function nullish<T>(parser: InstanceType<typeof Parser<T>>) {
+  return new NullishV<T>(parser);
+}
 export function array<T>(parser: InstanceType<typeof Parser<T>>) {
   return new ArrayV<T>(parser);
 }
@@ -257,6 +275,6 @@ export function literal<T extends string | number | boolean | null | undefined>(
 ) {
   return new LiteralV<T>(lit);
 }
-// export function tupple<const T extends Parser<unknown>[]>(parsers: T) {
-//   return new TuppleV<T>(parsers);
-// }
+export function tuple<T extends TupleVItems>(parsers: T) {
+  return new TupleV<T>(parsers);
+}
