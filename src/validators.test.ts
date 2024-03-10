@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { Infer, v } from "./";
+import { v } from "./";
 
 describe("Validators", () => {
   describe("String validator", () => {

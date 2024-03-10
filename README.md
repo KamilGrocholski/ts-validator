@@ -8,11 +8,17 @@ export type Result<T> =
   | { success: false; error: unknown };
 ```
 
-### Infer type
+### InferIn type
+
+```typescript
+not implemented
+```
+
+### InferOut type
 
 ```typescript
 const userSchema = v.object({ name: v.string(), age: v.number() });
-type User = Infer<typeof userSchema>; // { name: string, age: number }
+type User = InferOut<typeof userSchema>; // { name: string, age: number }
 ```
 
 ### BooleanV
@@ -102,7 +108,7 @@ console.log(result); // { success: true, out: undefined }
 ```typescript
 const schema = v.optional(v.string(), "okej");
 const result = schema.parse(undefined);
-type Schema = Infer<typeof schema>; // string
+type Schema = InferOut<typeof schema>; // string
 console.log(result); // { success: true, out: "okej" }
 ```
 
@@ -122,6 +128,15 @@ const result1 = schema.parse(null);
 const result2 = schema.parse(undefined);
 console.log(result1); // { success: true, out: null }
 console.log(result2); // { success: true, out: undefined }
+```
+
+### TranformV
+
+```typescript
+const schema = v.number().tranform((value) => (value > 5 ? "NO" : "YES"));
+const result = schema.parse(2);
+type Schema = InferOut<typeof schema>; // "NO" | "YES"
+console.log(result); // { success: true, out: "YES" }
 ```
 
 ## To install dependencies:

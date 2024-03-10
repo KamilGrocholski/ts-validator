@@ -1,3 +1,13 @@
+export type Result<T> =
+  | { success: true; out: T }
+  | { success: false; error: unknown };
+
+export type InferOut<T extends Parser<unknown>> = T extends Parser<infer U>
+  ? U extends { [key: string]: Parser<unknown> }
+    ? { [Key in keyof U]: InferOut<U[Key]> }
+    : U
+  : never;
+
 abstract class Parser<T> {
   protected defaultValue: T | undefined;
 
@@ -29,16 +39,6 @@ class TransformV<T, U> extends Parser<U> {
     return { success: true, out: transformedValue };
   }
 }
-
-export type Result<T> =
-  | { success: true; out: T }
-  | { success: false; error: unknown };
-
-export type Infer<T extends Parser<unknown>> = T extends Parser<infer U>
-  ? U extends { [key: string]: Parser<unknown> }
-    ? { [Key in keyof U]: Infer<U[Key]> }
-    : U
-  : never;
 
 class OptionalV<
   T,
@@ -195,21 +195,21 @@ class ArrayV<T> extends Parser<T[]> {
 }
 
 class ObjectV<T extends { [key: string]: Parser<unknown> }> extends Parser<{
-  [Key in keyof T]: Infer<T[Key]>;
+  [Key in keyof T]: InferOut<T[Key]>;
 }> {
   constructor(private shape: T) {
     super();
   }
 
   parse(value: unknown): Result<{
-    [Key in keyof T]: Infer<T[Key]>;
+    [Key in keyof T]: InferOut<T[Key]>;
   }> {
     if (typeof value !== "object")
       return { success: false, error: "Not object" };
     if (value === null) return { success: false, error: "Object is null" };
 
     const out = {} as {
-      [Key in keyof T]: Infer<T[Key]>;
+      [Key in keyof T]: InferOut<T[Key]>;
     };
 
     for (const key in this.shape) {
@@ -225,12 +225,12 @@ class ObjectV<T extends { [key: string]: Parser<unknown> }> extends Parser<{
   }
 }
 
-class OrV<T extends Parser<unknown>> extends Parser<Infer<T>> {
+class OrV<T extends Parser<unknown>> extends Parser<InferOut<T>> {
   constructor(private parsers: T[]) {
     super();
   }
 
-  parse(value: unknown): Result<Infer<T>> {
+  parse(value: unknown): Result<InferOut<T>> {
     for (const parser of this.parsers) {
       const res = parser.parse(value);
       // @ts-ignore
@@ -258,7 +258,7 @@ class LiteralV<
 type TupleVItems = [Parser<unknown>, ...Parser<unknown>[]];
 type AssertArray<T> = T extends any[] ? T : never;
 type TupleVOut<T extends TupleVItems | []> = AssertArray<{
-  [K in keyof T]: T[K] extends Parser<unknown> ? Infer<T[K]> : never;
+  [K in keyof T]: T[K] extends Parser<unknown> ? InferOut<T[K]> : never;
 }>;
 class TupleV<T extends TupleVItems> extends Parser<TupleVOut<T>> {
   constructor(private parsers: T) {
