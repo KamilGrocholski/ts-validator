@@ -146,6 +146,15 @@ type Schema = InferOut<typeof schema>; // "NO" | "YES"
 console.log(result); // { success: true, out: "YES" }
 ```
 
+### parseAsync
+
+```typescript
+const schema = v.number();
+const result = await schema.parseAsync(2);
+type Schema = InferOut<typeof schema>; // number
+console.log(result); // { success: true, out: 2 }
+```
+
 ## To install dependencies:
 
 ```bash
