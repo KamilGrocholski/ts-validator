@@ -2,6 +2,7 @@ export type Result<TOut> =
   | { success: true; out: TOut }
   | { success: false; error: unknown };
 
+export type UnknownObjectVParser = { [key: string]: UnknownVParser };
 export type UnknownVParser = Parser<unknown, unknown>;
 
 export type InferIn<T extends UnknownVParser> = T extends Parser<
@@ -252,7 +253,7 @@ class ArrayV<T> extends Parser<T[], T[]> {
   }
 }
 
-class ObjectV<T extends { [key: string]: UnknownVParser }> extends Parser<
+class ObjectV<T extends UnknownObjectVParser> extends Parser<
   {
     [Key in keyof T]: InferIn<T[Key]>;
   },
@@ -438,7 +439,7 @@ export function nullish<T>(parser: InstanceType<typeof Parser<T, T>>) {
 export function array<T>(parser: InstanceType<typeof Parser<T, T>>) {
   return new ArrayV<T>(parser);
 }
-export function object<T extends { [key: string]: UnknownVParser }>(shape: T) {
+export function object<T extends UnknownObjectVParser>(shape: T) {
   return new ObjectV<T>(shape);
 }
 export function union<T extends UnknownVParser>(parsers: T[]) {
