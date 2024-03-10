@@ -13,6 +13,16 @@ describe("Validators", () => {
       const result = v.string().parse(123);
       expect(result.success).toBe(false);
     });
+
+    test("Optional string", () => {
+      const result = v.optional(v.string()).parse(undefined);
+      expect(result.success).toBe(true);
+    });
+
+    test("Nullable string", () => {
+      const result = v.nullable(v.string()).parse(null);
+      expect(result.success).toBe(true);
+    });
   });
 
   describe("Number validator", () => {
@@ -24,6 +34,16 @@ describe("Validators", () => {
     test("Invalid number", () => {
       const result = v.number().parse("not a number");
       expect(result.success).toBe(false);
+    });
+
+    test("Optional number", () => {
+      const result = v.optional(v.number()).parse(undefined);
+      expect(result.success).toBe(true);
+    });
+
+    test("Nullable number", () => {
+      const result = v.nullable(v.number()).parse(null);
+      expect(result.success).toBe(true);
     });
   });
 
@@ -97,6 +117,16 @@ describe("Validators", () => {
       });
       expect(result.success).toBe(true);
     });
+
+    test("Optional object", () => {
+      const result = v.optional(v.object({ a: v.string() })).parse(undefined);
+      expect(result.success).toBe(true);
+    });
+
+    test("Nullable object", () => {
+      const result = v.nullable(v.object({ a: v.string() })).parse(null);
+      expect(result.success).toBe(true);
+    });
   });
 
   describe("Array Validator", () => {
@@ -157,6 +187,16 @@ describe("Validators", () => {
       const result = schema.parse([1, 2, 3, 4]);
       expect(result.success).toBe(false);
     });
+
+    test("Optional array", () => {
+      const result = v.optional(v.array(v.string())).parse(undefined);
+      expect(result.success).toBe(true);
+    });
+
+    test("Nullable array", () => {
+      const result = v.nullable(v.array(v.string())).parse(null);
+      expect(result.success).toBe(true);
+    });
   });
 
   describe("Or Validator", () => {
@@ -189,6 +229,16 @@ describe("Validators", () => {
       const result = schema.parse({ key: "value" });
       expect(result.success).toBe(false);
     });
+
+    test("Optional or", () => {
+      const result = v.optional(v.or([])).parse(undefined);
+      expect(result.success).toBe(true);
+    });
+
+    test("Nullable or", () => {
+      const result = v.nullable(v.or([])).parse(null);
+      expect(result.success).toBe(true);
+    });
   });
 
   describe("Literal Validator", () => {
@@ -214,6 +264,16 @@ describe("Validators", () => {
       const schema = v.literal(null);
       const result = schema.parse(undefined);
       expect(result.success).toBe(false);
+    });
+
+    test("Optional literal", () => {
+      const result = v.optional(v.literal(1)).parse(undefined);
+      expect(result.success).toBe(true);
+    });
+
+    test("Nullable literal", () => {
+      const result = v.nullable(v.literal(1)).parse(null);
+      expect(result.success).toBe(true);
     });
   });
 });

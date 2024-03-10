@@ -241,7 +241,7 @@ export function optional<T>(parser: InstanceType<typeof Parser<T>>) {
   return new OptionalV<T>(parser);
 }
 export function nullable<T>(parser: InstanceType<typeof Parser<T>>) {
-  new NullableV<T>(parser);
+  return new NullableV<T>(parser);
 }
 export function array<T>(parser: InstanceType<typeof Parser<T>>) {
   return new ArrayV<T>(parser);
