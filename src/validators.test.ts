@@ -1,9 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { Infer, v } from "./";
-
-const o = v.optional(v.string(), "okej");
-type V = Infer<typeof o>;
+import { v } from "./";
 
 describe("Validators", () => {
   describe("String validator", () => {

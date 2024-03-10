@@ -97,6 +97,15 @@ const result = schema.parse(undefined);
 console.log(result); // { success: true, out: undefined }
 ```
 
+### OptionalV with default
+
+```typescript
+const schema = v.optional(v.string(), "okej");
+const result = schema.parse(undefined);
+type Schema = Infer<typeof schema>; // string
+console.log(result); // { success: true, out: "okej" }
+```
+
 ### NullableV
 
 ```typescript
