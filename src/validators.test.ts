@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { InferIn, v } from "./";
+import { v } from "./";
 
 describe("Validators", () => {
   describe("Date validator", () => {
@@ -169,6 +169,131 @@ describe("Validators", () => {
         })
         .parse(3);
       expect(result.success).toBe(true);
+    });
+
+    test("Number with _min", () => {
+      const result = v.number().min(5).parse(10);
+      expect(result.success).toBe(true);
+    });
+
+    test("Number with _min (invalid)", () => {
+      const result = v.number().min(5).parse(2);
+      expect(result.success).toBe(false);
+    });
+
+    test("Number with _max", () => {
+      const result = v.number().max(10).parse(5);
+      expect(result.success).toBe(true);
+    });
+
+    test("Number with _max (invalid)", () => {
+      const result = v.number().max(10).parse(15);
+      expect(result.success).toBe(false);
+    });
+
+    test("Number with _gt", () => {
+      const result = v.number().gt(5).parse(10);
+      expect(result.success).toBe(true);
+    });
+
+    test("Number with _gt (invalid)", () => {
+      const result = v.number().gt(5).parse(5);
+      expect(result.success).toBe(false);
+    });
+
+    test("Number with _gte", () => {
+      const result = v.number().gte(5).parse(10);
+      expect(result.success).toBe(true);
+    });
+
+    test("Number with _gte (invalid)", () => {
+      const result = v.number().gte(5).parse(4);
+      expect(result.success).toBe(false);
+    });
+
+    test("Number with _lt", () => {
+      const result = v.number().lt(10).parse(5);
+      expect(result.success).toBe(true);
+    });
+
+    test("Number with _lt (invalid)", () => {
+      const result = v.number().lt(10).parse(10);
+      expect(result.success).toBe(false);
+    });
+
+    test("Number with _lte", () => {
+      const result = v.number().lte(10).parse(5);
+      expect(result.success).toBe(true);
+    });
+
+    test("Number with _lte (invalid)", () => {
+      const result = v.number().lte(10).parse(11);
+      expect(result.success).toBe(false);
+    });
+
+    test("Number with _int", () => {
+      const result = v.number().int().parse(5);
+      expect(result.success).toBe(true);
+    });
+
+    test("Number with _int (invalid)", () => {
+      const result = v.number().int().parse(5.5);
+      expect(result.success).toBe(false);
+    });
+
+    test("Number with _positive", () => {
+      const result = v.number().positive().parse(5);
+      expect(result.success).toBe(true);
+    });
+
+    test("Number with _positive (invalid)", () => {
+      const result = v.number().positive().parse(-5);
+      expect(result.success).toBe(false);
+    });
+
+    test("Number with _nonpositive", () => {
+      const result = v.number().nonpositive().parse(-5);
+      expect(result.success).toBe(true);
+    });
+
+    test("Number with _nonpositive (invalid)", () => {
+      const result = v.number().nonpositive().parse(5);
+      expect(result.success).toBe(false);
+    });
+
+    test("Number with _negative", () => {
+      const result = v.number().negative().parse(-5);
+      expect(result.success).toBe(true);
+    });
+
+    test("Number with _negative (invalid)", () => {
+      const result = v.number().negative().parse(5);
+      expect(result.success).toBe(false);
+    });
+
+    test("Number with _nonnegative", () => {
+      const result = v.number().nonnegative().parse(5);
+      expect(result.success).toBe(true);
+    });
+
+    test("Number with _nonnegative (invalid)", () => {
+      const result = v.number().nonnegative().parse(-5);
+      expect(result.success).toBe(false);
+    });
+
+    test("Number with _finite", () => {
+      const result = v.number().finite().parse(5);
+      expect(result.success).toBe(true);
+    });
+
+    test("Number with _finite (invalid)", () => {
+      const result = v.number().finite().parse(Infinity);
+      expect(result.success).toBe(false);
+    });
+
+    test("Safe number", () => {
+      const result = v.number().safe().parse(9007199254740993);
+      expect(result.success).toBe(false);
     });
   });
 
@@ -555,7 +680,6 @@ describe("Validators", () => {
         v.object({ name: v.string(), age: v.number() }),
         v.object({ name: v.string(), age: v.number() }),
       ]);
-      type S = InferIn<typeof schema>;
       const result = schema.parse([
         { name: "John", age: 30 },
         { name: "Jane", age: "twenty-five" },

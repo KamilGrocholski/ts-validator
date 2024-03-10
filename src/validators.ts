@@ -187,6 +187,18 @@ class StringV extends Parser<string, string> {
 class NumberV extends Parser<number, number> {
   private _min: number | undefined;
   private _max: number | undefined;
+  private _gt: number | undefined;
+  private _gte: number | undefined;
+  private _lt: number | undefined;
+  private _lte: number | undefined;
+  private _int: boolean = false;
+  private _positive: boolean = false;
+  private _nonpositive: boolean = false;
+  private _negative: boolean = false;
+  private _nonnegative: boolean = false;
+  private _finite: boolean = false;
+  private _safe: boolean = false;
+
   constructor() {
     super();
   }
@@ -194,20 +206,113 @@ class NumberV extends Parser<number, number> {
   parse(value: unknown): Result<number> {
     if (typeof value !== "number")
       return { success: false, error: "Not number" };
-    if (this._min !== undefined && value < this._min)
+
+    const parsedValue = value as number;
+
+    if (this._int && !Number.isInteger(parsedValue))
+      return { success: false, error: "Not integer" };
+
+    if (this._safe && !Number.isSafeInteger(parsedValue))
+      return { success: false, error: "Not safe integer" };
+
+    if (this._finite && !Number.isFinite(parsedValue))
+      return { success: false, error: "Not finite" };
+
+    if (this._gt !== undefined && parsedValue <= this._gt)
+      return { success: false, error: `Number not gt ${this._gt}` };
+
+    if (this._gte !== undefined && parsedValue < this._gte)
+      return { success: false, error: `Number not gte ${this._gte}` };
+
+    if (this._lt !== undefined && parsedValue >= this._lt)
+      return { success: false, error: `Number not lt ${this._lt}` };
+
+    if (this._lte !== undefined && parsedValue > this._lte)
+      return { success: false, error: `Number not lte ${this._lte}` };
+
+    if (this._min !== undefined && parsedValue < this._min)
       return { success: false, error: `Number < ${this._min}` };
-    if (this._max !== undefined && value > this._max)
+
+    if (this._max !== undefined && parsedValue > this._max)
       return { success: false, error: `Number > ${this._max}` };
-    return { success: true, out: value };
+
+    if (this._positive && parsedValue <= 0)
+      return { success: false, error: `Number not positive` };
+
+    if (this._nonpositive && parsedValue > 0)
+      return { success: false, error: `Number not non-positive` };
+
+    if (this._negative && parsedValue >= 0)
+      return { success: false, error: `Number not negative` };
+
+    if (this._nonnegative && parsedValue < 0)
+      return { success: false, error: `Number not non-negative` };
+
+    return { success: true, out: parsedValue };
   }
 
-  min(len: number) {
-    this._min = len;
+  min(value: number) {
+    this._min = value;
     return this;
   }
 
-  max(len: number) {
-    this._max = len;
+  max(value: number) {
+    this._max = value;
+    return this;
+  }
+
+  gt(value: number) {
+    this._gt = value;
+    return this;
+  }
+
+  gte(value: number) {
+    this._gte = value;
+    return this;
+  }
+
+  lt(value: number) {
+    this._lt = value;
+    return this;
+  }
+
+  lte(value: number) {
+    this._lte = value;
+    return this;
+  }
+
+  int() {
+    this._int = true;
+    return this;
+  }
+
+  positive() {
+    this._positive = true;
+    return this;
+  }
+
+  nonpositive() {
+    this._nonpositive = true;
+    return this;
+  }
+
+  negative() {
+    this._negative = true;
+    return this;
+  }
+
+  nonnegative() {
+    this._nonnegative = true;
+    return this;
+  }
+
+  safe() {
+    this._safe = true;
+    return this;
+  }
+
+  finite() {
+    this._finite = true;
     return this;
   }
 }
