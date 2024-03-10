@@ -1,4 +1,10 @@
 abstract class Parser<T> {
+  protected defaultValue: T | undefined;
+
+  constructor(defaultValue?: T) {
+    this.defaultValue = defaultValue;
+  }
+
   abstract parse(value: unknown): Result<T>;
 }
 
@@ -12,13 +18,24 @@ export type Infer<T extends Parser<unknown>> = T extends Parser<infer U>
     : U
   : never;
 
-class OptionalV<T> extends Parser<T | undefined> {
-  constructor(private parser: InstanceType<typeof Parser<T>>) {
-    super();
+class OptionalV<
+  T,
+  TDefaultType extends T | undefined = T | undefined,
+> extends Parser<T | TDefaultType> {
+  constructor(
+    private parser: InstanceType<typeof Parser<T>>,
+    defaultValue?: TDefaultType,
+  ) {
+    super(defaultValue);
   }
 
-  parse(value: unknown): Result<T | undefined> {
-    if (typeof value === "undefined") return { success: true, out: undefined };
+  parse(value: unknown): Result<T | TDefaultType> {
+    if (typeof value === "undefined") {
+      if (this.defaultValue !== undefined)
+        return { success: true, out: this.defaultValue };
+      // @ts-ignore
+      return { success: true, out: undefined };
+    }
     return this.parser.parse(value);
   }
 }
@@ -252,8 +269,11 @@ export function number() {
 export function string() {
   return new StringV();
 }
-export function optional<T>(parser: InstanceType<typeof Parser<T>>) {
-  return new OptionalV<T>(parser);
+export function optional<T, TDefault extends T | undefined = T | undefined>(
+  parser: InstanceType<typeof Parser<T>>,
+  defaultValue?: TDefault,
+) {
+  return new OptionalV<T, TDefault>(parser, defaultValue);
 }
 export function nullable<T>(parser: InstanceType<typeof Parser<T>>) {
   return new NullableV<T>(parser);

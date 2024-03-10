@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
-import { v } from "./";
+import { Infer, v } from "./";
+
+const o = v.optional(v.string(), "okej");
+type V = Infer<typeof o>;
 
 describe("Validators", () => {
   describe("String validator", () => {
@@ -16,6 +19,11 @@ describe("Validators", () => {
 
     test("Optional string", () => {
       const result = v.optional(v.string()).parse(undefined);
+      expect(result.success).toBe(true);
+    });
+
+    test("Optional string with default", () => {
+      const result = v.optional(v.string(), "okej").parse(undefined);
       expect(result.success).toBe(true);
     });
 
@@ -43,6 +51,11 @@ describe("Validators", () => {
 
     test("Optional number", () => {
       const result = v.optional(v.number()).parse(undefined);
+      expect(result.success).toBe(true);
+    });
+
+    test("Optional number with default", () => {
+      const result = v.optional(v.number(), 1).parse(undefined);
       expect(result.success).toBe(true);
     });
 
@@ -133,6 +146,13 @@ describe("Validators", () => {
       expect(result.success).toBe(true);
     });
 
+    test("Optional object with default", () => {
+      const result = v
+        .optional(v.object({ a: v.string() }), { a: "okej" })
+        .parse(undefined);
+      expect(result.success).toBe(true);
+    });
+
     test("Nullable object", () => {
       const result = v.nullable(v.object({ a: v.string() })).parse(null);
       expect(result.success).toBe(true);
@@ -208,6 +228,13 @@ describe("Validators", () => {
       expect(result.success).toBe(true);
     });
 
+    test("Optional array with default", () => {
+      const result = v
+        .optional(v.array(v.string()), ["okej", "okej2"])
+        .parse(undefined);
+      expect(result.success).toBe(true);
+    });
+
     test("Nullable array", () => {
       const result = v.nullable(v.array(v.string())).parse(null);
       expect(result.success).toBe(true);
@@ -252,6 +279,13 @@ describe("Validators", () => {
 
     test("Optional or", () => {
       const result = v.optional(v.or([])).parse(undefined);
+      expect(result.success).toBe(true);
+    });
+
+    test("Optional or with default", () => {
+      const result = v
+        .optional(v.or([v.string(), v.number()]), "okej")
+        .parse(undefined);
       expect(result.success).toBe(true);
     });
 
@@ -359,6 +393,13 @@ describe("Validators", () => {
     test("Optional tuple", () => {
       const schema = v.optional(v.tuple([v.string(), v.number()]));
       const result = schema.parse(undefined);
+      expect(result.success).toBe(true);
+    });
+
+    test("Optional tuple with default", () => {
+      const result = v
+        .optional(v.tuple([v.string(), v.number()]), ["okej", 1])
+        .parse(undefined);
       expect(result.success).toBe(true);
     });
 
