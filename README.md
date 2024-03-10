@@ -2,7 +2,7 @@
 
 ### Result type
 
-```
+```typescript
 export type Result<T> =
   | { success: true; out: T }
   | { success: false; error: unknown };
@@ -10,14 +10,14 @@ export type Result<T> =
 
 ### Infer type
 
-```
-const userSchema = v.object({ name: v.string(), age: v.number() })
-type User = Infer<typeof userSchema> // { name: string, age: number }
+```typescript
+const userSchema = v.object({ name: v.string(), age: v.number() });
+type User = Infer<typeof userSchema>; // { name: string, age: number }
 ```
 
 ### BooleanV
 
-```
+```typescript
 const schema = v.boolean();
 const result = schema.parse(true);
 console.log(result); // { success: true, out: true }
@@ -25,7 +25,7 @@ console.log(result); // { success: true, out: true }
 
 ### StringV
 
-```
+```typescript
 const schema = v.string().min(1).max(6);
 const result = schema.parse("String");
 console.log(result); // { success: true, out: "String" }
@@ -33,7 +33,7 @@ console.log(result); // { success: true, out: "String" }
 
 ### NumberV
 
-```
+```typescript
 const schema = v.number().min(0).max(10);
 const result = schema.parse(5);
 console.log(result); // { success: true, out: 5 }
@@ -41,29 +41,31 @@ console.log(result); // { success: true, out: 5 }
 
 ### ArrayV
 
-```
-const schema = v.array(v.number())
+```typescript
+const schema = v.array(v.number());
 const result = schema.parse([1, 2, 3, 4]);
 console.log(result); // { success: true, out: [1, 2, 3, 4] }
 ```
 
 ### ObjectV
 
-```
-const schema = v.object(v.object({
+```typescript
+const schema = v.object(
+  v.object({
     a: v.string(),
     b: v.number(),
-}));
+  }),
+);
 const result = schema.parse({
-    a: "String",
-    b: 1234,
+  a: "String",
+  b: 1234,
 });
 console.log(result); // { success: true, out: { a: "String", b: 1234 } }
 ```
 
 ### OrV
 
-```
+```typescript
 const schema = v.or([v.number(), v.string()]);
 const result1 = schema.parse([1]);
 const result2 = schema.parse(["String"]);
@@ -73,7 +75,7 @@ console.log(result2); // { success: true, out: ["String"] }
 
 ### LiteralV
 
-```
+```typescript
 const schema = v.literal("String");
 const result = schema.parse("String");
 console.log(result); // { success: true, out: "String" }
@@ -81,31 +83,31 @@ console.log(result); // { success: true, out: "String" }
 
 ### TupleV
 
-```
+```typescript
 const schema = v.tuple([v.string(), v.number()]);
 const result = schema.parse(["String", 1]);
 console.log(result); // { success: true, out: ["String", 1] }
 ```
 
-### Optional
+### OptionalV
 
-```
+```typescript
 const schema = v.optional(v.string());
 const result = schema.parse(undefined);
 console.log(result); // { success: true, out: undefined }
 ```
 
-### Nullable
+### NullableV
 
-```
+```typescript
 const schema = v.nullable(v.string());
 const result = schema.parse(null);
 console.log(result); // { success: true, out: null }
 ```
 
-### Nullish
+### NullishV
 
-```
+```typescript
 const schema = v.nullish(v.string());
 const result1 = schema.parse(null);
 const result2 = schema.parse(undefined);
