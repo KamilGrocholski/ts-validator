@@ -83,12 +83,10 @@ console.log(result); // { success: true, out: [1, 2, 3, 4] }
 ### ObjectV
 
 ```typescript
-const schema = v.object(
-  v.object({
-    a: v.string(),
-    b: v.number(),
-  }),
-);
+const schema = v.object({
+  a: v.string(),
+  b: v.number(),
+});
 const result = schema.parse({
   a: "String",
   b: 1234,
