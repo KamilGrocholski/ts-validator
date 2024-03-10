@@ -6,6 +6,28 @@ abstract class Parser<T> {
   }
 
   abstract parse(value: unknown): Result<T>;
+
+  tranform<U>(tranformator: (value: T) => U): Parser<U> {
+    return new TransformV<T, U>(this, tranformator);
+  }
+}
+
+class TransformV<T, U> extends Parser<U> {
+  constructor(
+    private parser: Parser<T>,
+    private transform: (value: T) => U,
+  ) {
+    super();
+  }
+
+  parse(value: unknown): Result<U> {
+    const parsedResult = this.parser.parse(value);
+    if (!parsedResult.success) {
+      return parsedResult;
+    }
+    const transformedValue = this.transform(parsedResult.out);
+    return { success: true, out: transformedValue };
+  }
 }
 
 export type Result<T> =
@@ -193,7 +215,8 @@ class ObjectV<T extends { [key: string]: Parser<unknown> }> extends Parser<{
     for (const key in this.shape) {
       // @ts-ignore
       const res = this.shape[key].parse(value[key]);
-      if (!res.success) return { success: false, error: { [key]: res.error } };
+      if (!res.success)
+        return { success: false, error: `{ field: [${key}]: ${res.error} }` };
       // @ts-ignore
       out[key] = res.out;
     }

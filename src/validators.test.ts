@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { v } from "./";
+import { Infer, v } from "./";
 
 describe("Validators", () => {
   describe("String validator", () => {
@@ -33,6 +33,17 @@ describe("Validators", () => {
       const result = v.nullish(v.string()).parse(null);
       expect(result.success).toBe(true);
     });
+
+    test("Transform string", () => {
+      const result = v
+        .optional(v.string())
+        .tranform((value) => {
+          if (value) return 2;
+          return "NIE";
+        })
+        .parse("n");
+      expect(result.success).toBe(true);
+    });
   });
 
   describe("Number validator", () => {
@@ -63,6 +74,17 @@ describe("Validators", () => {
 
     test("Nullish number", () => {
       const result = v.nullish(v.number()).parse(null);
+      expect(result.success).toBe(true);
+    });
+
+    test("Transform number", () => {
+      const result = v
+        .number()
+        .tranform((value) => {
+          if (value > 2) return 2;
+          return value;
+        })
+        .parse(3);
       expect(result.success).toBe(true);
     });
   });
@@ -159,6 +181,23 @@ describe("Validators", () => {
       const result = v.nullish(v.object({ a: v.string() })).parse(null);
       expect(result.success).toBe(true);
     });
+
+    test("Transform object", () => {
+      const result = v
+        .object({
+          name: v.string(),
+          role: v.or([v.literal("USER"), v.literal("ADMIN")]),
+        })
+        .tranform((value) => {
+          if (value.role === "ADMIN") {
+            return { name: value.name, isAdmin: true, vals: 8 };
+          } else if (value.role === "USER") {
+            return { name: value.name, isAdmin: false, vals: 5 };
+          } else return null;
+        })
+        .parse({ name: "Ksf", role: "USER" });
+      expect(result.success).toBe(true);
+    });
   });
 
   describe("Array Validator", () => {
@@ -241,6 +280,14 @@ describe("Validators", () => {
       const result = v.nullish(v.array(v.string())).parse(null);
       expect(result.success).toBe(true);
     });
+
+    test("Transform array", () => {
+      const result = v
+        .array(v.string())
+        .tranform((array) => array.length > 2)
+        .parse(["ONE", "TWO"]);
+      expect(result.success).toBe(true);
+    });
   });
 
   describe("Or Validator", () => {
@@ -295,6 +342,14 @@ describe("Validators", () => {
       const result = v.nullish(v.or([v.string(), v.number()])).parse(null);
       expect(result.success).toBe(true);
     });
+
+    test("Transform or", () => {
+      const result = v
+        .or([v.string(), v.number()])
+        .tranform((value) => (typeof value === "string" ? "NIE" : "TAK"))
+        .parse("ok");
+      expect(result.success).toBe(true);
+    });
   });
 
   describe("Literal Validator", () => {
@@ -334,6 +389,14 @@ describe("Validators", () => {
 
     test("Nullish literal", () => {
       const result = v.nullish(v.literal("okej")).parse(null);
+      expect(result.success).toBe(true);
+    });
+
+    test("Transform literal", () => {
+      const result = v
+        .literal("okej")
+        .tranform(() => 234)
+        .parse("okej");
       expect(result.success).toBe(true);
     });
   });
@@ -417,6 +480,14 @@ describe("Validators", () => {
         v.tuple([v.boolean()]),
       ]);
       const result = schema.parse([[42, "hello"], [true]]);
+      expect(result.success).toBe(true);
+    });
+
+    test("Transform tuple", () => {
+      const result = v
+        .tuple([v.string(), v.number()])
+        .tranform(([str, num]) => [num, str] as [number, string])
+        .parse(["okej", 1]);
       expect(result.success).toBe(true);
     });
   });
