@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { v } from "./";
+import { InferIn, v } from "./";
 
 describe("Validators", () => {
   describe("String validator", () => {
@@ -37,7 +37,7 @@ describe("Validators", () => {
     test("Transform string", () => {
       const result = v
         .optional(v.string())
-        .tranform((value) => {
+        .transform((value) => {
           if (value) return 2;
           return "NIE";
         })
@@ -80,7 +80,7 @@ describe("Validators", () => {
     test("Transform number", () => {
       const result = v
         .number()
-        .tranform((value) => {
+        .transform((value) => {
           if (value > 2) return 2;
           return value;
         })
@@ -188,7 +188,7 @@ describe("Validators", () => {
           name: v.string(),
           role: v.or([v.literal("USER"), v.literal("ADMIN")]),
         })
-        .tranform((value) => {
+        .transform((value) => {
           if (value.role === "ADMIN") {
             return { name: value.name, isAdmin: true, vals: 8 };
           } else if (value.role === "USER") {
@@ -284,7 +284,7 @@ describe("Validators", () => {
     test("Transform array", () => {
       const result = v
         .array(v.string())
-        .tranform((array) => array.length > 2)
+        .transform((array) => array.length > 2)
         .parse(["ONE", "TWO"]);
       expect(result.success).toBe(true);
     });
@@ -346,7 +346,7 @@ describe("Validators", () => {
     test("Transform or", () => {
       const result = v
         .or([v.string(), v.number()])
-        .tranform((value) => (typeof value === "string" ? "NIE" : "TAK"))
+        .transform((value) => (typeof value === "string" ? "NIE" : "TAK"))
         .parse("ok");
       expect(result.success).toBe(true);
     });
@@ -395,7 +395,7 @@ describe("Validators", () => {
     test("Transform literal", () => {
       const result = v
         .literal("okej")
-        .tranform(() => 234)
+        .transform(() => 234)
         .parse("okej");
       expect(result.success).toBe(true);
     });
@@ -443,6 +443,7 @@ describe("Validators", () => {
         v.object({ name: v.string(), age: v.number() }),
         v.object({ name: v.string(), age: v.number() }),
       ]);
+      type S = InferIn<typeof schema>;
       const result = schema.parse([
         { name: "John", age: 30 },
         { name: "Jane", age: "twenty-five" },
@@ -486,7 +487,7 @@ describe("Validators", () => {
     test("Transform tuple", () => {
       const result = v
         .tuple([v.string(), v.number()])
-        .tranform(([str, num]) => [num, str] as [number, string])
+        .transform(([str, num]) => [num, str] as [number, string])
         .parse(["okej", 1]);
       expect(result.success).toBe(true);
     });

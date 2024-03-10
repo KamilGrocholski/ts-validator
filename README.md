@@ -11,7 +11,11 @@ export type Result<T> =
 ### InferIn type
 
 ```typescript
-not implemented
+const userSchema = v.object({
+  name: v.string(),
+  age: v.number().transform((v) => (v > 2 ? "Y" : "N")),
+});
+type User = InferIn<typeof userSchema>; // { name: string, age: number }
 ```
 
 ### InferOut type
@@ -130,10 +134,10 @@ console.log(result1); // { success: true, out: null }
 console.log(result2); // { success: true, out: undefined }
 ```
 
-### TranformV
+### TransformV
 
 ```typescript
-const schema = v.number().tranform((value) => (value > 5 ? "NO" : "YES"));
+const schema = v.number().transform((value) => (value > 5 ? "NO" : "YES"));
 const result = schema.parse(2);
 type Schema = InferOut<typeof schema>; // "NO" | "YES"
 console.log(result); // { success: true, out: "YES" }
