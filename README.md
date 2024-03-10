@@ -21,8 +21,11 @@ type User = InferIn<typeof userSchema>; // { name: string, age: number }
 ### InferOut type
 
 ```typescript
-const userSchema = v.object({ name: v.string(), age: v.number() });
-type User = InferOut<typeof userSchema>; // { name: string, age: number }
+const userSchema = v.object({
+  name: v.string(),
+  age: v.number().transform((v) => (v > 2 ? "Y" : "N")),
+});
+type User = InferOut<typeof userSchema>; // { name: string, age: "Y" | "N" }
 ```
 
 ### BooleanV
