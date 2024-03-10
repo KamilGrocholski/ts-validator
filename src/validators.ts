@@ -29,6 +29,10 @@ abstract class Parser<TIn, TOut> {
 
   abstract parse(value: unknown): Result<TOut>;
 
+  async parseAsync(value: unknown): Promise<Result<TOut>> {
+    return Promise.resolve(this.parse(value));
+  }
+
   transform<U>(transformer: (value: TOut) => U): Parser<TIn, U> {
     return new TransformV<TIn, TOut, U>(this, transformer);
   }
@@ -84,7 +88,7 @@ class NullableV<T> extends Parser<T | null, T | null> {
   }
 }
 
-class NullishV<T> extends Parser<unknown, T | null | undefined> {
+class NullishV<T> extends Parser<T | null | undefined, T | null | undefined> {
   constructor(private parser: InstanceType<typeof Parser<unknown, T>>) {
     super();
   }

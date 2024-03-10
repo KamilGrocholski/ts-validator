@@ -4,6 +4,11 @@ import { InferIn, v } from "./";
 
 describe("Validators", () => {
   describe("String validator", () => {
+    test("Async string", async () => {
+      const result = await v.string().parseAsync("ok");
+      expect(result.success).toBe(true);
+    });
+
     test("Valid string", () => {
       const result = v.string().parse("hello");
       expect(result.success).toBe(true);
@@ -47,6 +52,11 @@ describe("Validators", () => {
   });
 
   describe("Number validator", () => {
+    test("Async number", async () => {
+      const result = await v.number().parseAsync(1);
+      expect(result.success).toBe(true);
+    });
+
     test("Valid number", () => {
       const result = v.number().parse(42);
       expect(result.success).toBe(true);
@@ -90,6 +100,13 @@ describe("Validators", () => {
   });
 
   describe("Object validator", () => {
+    test("Async object", async () => {
+      const result = await v
+        .object({ a: v.string() })
+        .parseAsync({ a: "String" });
+      expect(result.success).toBe(true);
+    });
+
     test("Valid object with string and number properties", () => {
       const schema = v.object({
         name: v.string(),
@@ -201,6 +218,13 @@ describe("Validators", () => {
   });
 
   describe("Array Validator", () => {
+    test("Async array", async () => {
+      const result = await v
+        .array(v.string())
+        .parseAsync(["string1", "string2"]);
+      expect(result.success).toBe(true);
+    });
+
     test("Valid array with numbers", () => {
       const schema = v.array(v.number());
       const result = schema.parse([1, 2, 3]);
@@ -291,6 +315,11 @@ describe("Validators", () => {
   });
 
   describe("Or Validator", () => {
+    test("Async or", async () => {
+      const result = await v.or([v.string(), v.number()]).parseAsync("ok");
+      expect(result.success).toBe(true);
+    });
+
     test("Valid number or string", () => {
       const schema = v.or([v.number(), v.string()]);
       const result = schema.parse(42);
@@ -353,6 +382,11 @@ describe("Validators", () => {
   });
 
   describe("Literal Validator", () => {
+    test("Async literal", async () => {
+      const result = await v.literal("ok").parseAsync("ok");
+      expect(result.success).toBe(true);
+    });
+
     test("Valid literal value", () => {
       const schema = v.literal("hello");
       const result = schema.parse("hello");
@@ -402,6 +436,11 @@ describe("Validators", () => {
   });
 
   describe("Tuple Validator", () => {
+    test("Async tuple", async () => {
+      const result = await v.tuple([v.string()]).parseAsync(["ok"]);
+      expect(result.success).toBe(true);
+    });
+
     test("Valid tuple with numbers", () => {
       const schema = v.tuple([v.number(), v.number()]);
       const result = schema.parse([1, 2]);
