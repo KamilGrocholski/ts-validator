@@ -102,6 +102,14 @@ const result = schema.parse(["String", 1]);
 console.log(result); // { success: true, out: ["String", 1] }
 ```
 
+### RecordV
+
+```typescript
+const schema = v.record(v.string());
+const result = schema.parse({ key1: "value1", key2: "value2" });
+console.log(result); // { success: true, out: { key1: "value1", key2: "value2" } }
+```
+
 ### OptionalV
 
 ```typescript

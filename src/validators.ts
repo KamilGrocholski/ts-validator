@@ -267,7 +267,7 @@ class OrV<T extends Parser<unknown, unknown>> extends Parser<
 }
 
 class LiteralV<
-  T extends string | number | boolean | null | undefined,
+  const T extends string | number | boolean | null | undefined,
 > extends Parser<T, T> {
   constructor(private lit: T) {
     super();
@@ -287,7 +287,10 @@ type TupleVOut<T extends TupleVItems | []> = AssertArray<{
     ? InferOut<T[K]>
     : never;
 }>;
-class TupleV<T extends TupleVItems> extends Parser<T, TupleVOut<T>> {
+type TupleVIn<T extends TupleVItems | []> = AssertArray<{
+  [K in keyof T]: T[K] extends Parser<unknown, unknown> ? InferIn<T[K]> : never;
+}>;
+class TupleV<T extends TupleVItems> extends Parser<TupleVIn<T>, TupleVOut<T>> {
   constructor(private parsers: T) {
     super();
   }
@@ -303,6 +306,36 @@ class TupleV<T extends TupleVItems> extends Parser<T, TupleVOut<T>> {
       const res = this.parsers[i].parse(value[i]);
       if (!res.success) return { success: false, error: "" };
       out[i] = res.out;
+    }
+
+    // @ts-ignore
+    return { success: true, out };
+  }
+}
+
+class RecordV<T extends Parser<unknown, unknown>> extends Parser<
+  {
+    [key: string]: InferIn<T>;
+  },
+  {
+    [key: string]: InferOut<T>;
+  }
+> {
+  constructor(private parser: T) {
+    super();
+  }
+
+  parse(value: unknown): Result<{ [key: string]: InferOut<T> }> {
+    if (typeof value !== "object") return { success: false, error: null };
+    if (value === null) return { success: false, error: null };
+    const out = {};
+
+    for (const key in value) {
+      // @ts-ignore
+      const res = this.parser.parse(value[key]);
+      if (!res.success) return { success: false, error: null };
+      // @ts-ignore
+      out[key] = res.out;
     }
 
     // @ts-ignore
@@ -342,11 +375,14 @@ export function object<T extends { [key: string]: Parser<unknown, unknown> }>(
 export function or<T extends Parser<unknown, unknown>>(parsers: T[]) {
   return new OrV<T>(parsers);
 }
-export function literal<T extends string | number | boolean | null | undefined>(
-  lit: T,
-) {
+export function literal<
+  const T extends string | number | boolean | null | undefined,
+>(lit: T) {
   return new LiteralV<T>(lit);
 }
 export function tuple<T extends TupleVItems>(parsers: T) {
   return new TupleV<T>(parsers);
+}
+export function record<T extends Parser<unknown, unknown>>(parser: T) {
+  return new RecordV<T>(parser);
 }

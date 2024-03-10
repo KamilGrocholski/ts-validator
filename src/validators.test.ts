@@ -531,4 +531,51 @@ describe("Validators", () => {
       expect(result.success).toBe(true);
     });
   });
+
+  describe("Record validator", () => {
+    test("Async record", async () => {
+      const result = await v
+        .record(v.string())
+        .parseAsync({ key1: "value1", key2: "value2" });
+      expect(result.success).toBe(true);
+    });
+
+    test("Valid record", () => {
+      const result = v
+        .record(v.string())
+        .parse({ key1: "value1", key2: "value2" });
+      expect(result.success).toBe(true);
+    });
+
+    test("Invalid record", () => {
+      const result = v
+        .record(v.number())
+        .parse({ key1: "value1", key2: "value2" });
+      expect(result.success).toBe(false);
+    });
+
+    test("Optional record", () => {
+      const schema = v.optional(v.record(v.number()));
+      const result = schema.parse(undefined);
+      expect(result.success).toBe(true);
+    });
+
+    test("Optional record with default", () => {
+      const schema = v.optional(v.record(v.number()), { key: 1 });
+      const result = schema.parse(undefined);
+      expect(result.success).toBe(true);
+    });
+
+    test("Nullable record", () => {
+      const schema = v.nullable(v.record(v.number()));
+      const result = schema.parse(null);
+      expect(result.success).toBe(true);
+    });
+
+    test("Nullish record", () => {
+      const schema = v.nullish(v.record(v.number()));
+      const result = schema.parse(null);
+      expect(result.success).toBe(true);
+    });
+  });
 });
