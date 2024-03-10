@@ -8,6 +8,13 @@ export type Result<T> =
   | { success: false; error: unknown };
 ```
 
+### Infer type
+
+```
+const userSchema = v.object({ name: v.string(), age: v.number() })
+type User = Infer<typeof userSchema> // { name: string, age: number }
+```
+
 ### BooleanV
 
 ```
@@ -72,6 +79,14 @@ const result = schema.parse("String");
 console.log(result); // { success: true, out: "String" }
 ```
 
+### TupleV
+
+```
+const schema = v.tuple([v.string(), v.number()]);
+const result = schema.parse(["String", 1]);
+console.log(result); // { success: true, out: ["String", 1] }
+```
+
 ### Optional
 
 ```
@@ -86,6 +101,16 @@ console.log(result); // { success: true, out: undefined }
 const schema = v.nullable(v.string());
 const result = schema.parse(null);
 console.log(result); // { success: true, out: null }
+```
+
+### Nullish
+
+```
+const schema = v.nullish(v.string());
+const result1 = schema.parse(null);
+const result2 = schema.parse(undefined);
+console.log(result1); // { success: true, out: null }
+console.log(result2); // { success: true, out: undefined }
 ```
 
 ## To install dependencies:
