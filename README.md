@@ -136,15 +136,6 @@ const result = schema.parse(undefined);
 console.log(result); // { success: true, out: undefined }
 ```
 
-### OptionalV with default
-
-```typescript
-const schema = v.optional(v.string(), "okej");
-const result = schema.parse(undefined);
-type Schema = InferOut<typeof schema>; // string
-console.log(result); // { success: true, out: "okej" }
-```
-
 ### NullableV
 
 ```typescript
@@ -170,6 +161,15 @@ const schema = v.number().transform((value) => (value > 5 ? "NO" : "YES"));
 const result = schema.parse(2);
 type Schema = InferOut<typeof schema>; // "NO" | "YES"
 console.log(result); // { success: true, out: "YES" }
+```
+
+### Default
+
+```typescript
+const schema = v.string().default("default string");
+const result = schema.parse(undefined);
+type Schema = InferOut<typeof schema>; // string
+console.log(result); // { success: true, out: "default string" }
 ```
 
 ### parseAsync
