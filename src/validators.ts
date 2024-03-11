@@ -5,11 +5,21 @@ export type Result<TOut> =
 export type UnknownObjectVParser = { [key: string]: UnknownVParser };
 export type UnknownVParser = Parser<unknown, unknown>;
 
+type KeysOfType<T, SelectedType> = {
+  [key in keyof T]: SelectedType extends T[key] ? key : never;
+}[keyof T];
+
+type Optional<T> = Partial<Pick<T, KeysOfType<T, undefined>>>;
+
+type Required<T> = Omit<T, KeysOfType<T, undefined>>;
+
+export type OptionalUndefined<T> = Optional<T> & Required<T>;
+
 export type InferIn<T extends UnknownVParser> = T extends Parser<
   infer U,
   infer _
 >
-  ? U extends { [key: string]: UnknownVParser }
+  ? U extends UnknownObjectVParser
     ? { [Key in keyof U]: InferIn<U[Key]> }
     : U
   : never;
@@ -18,19 +28,19 @@ export type InferOut<T extends UnknownVParser> = T extends Parser<
   infer _,
   infer U
 >
-  ? U extends { [key: string]: UnknownVParser }
+  ? U extends UnknownObjectVParser
     ? { [Key in keyof U]: InferOut<U[Key]> }
     : U
   : never;
 
 abstract class Parser<TIn, TOut> {
-  protected defaultValue: TOut | undefined;
+  protected defaultValue?: TOut;
 
   constructor(defaultValue?: TOut) {
     this.defaultValue = defaultValue;
   }
 
-  abstract parse(value: unknown): Result<TOut>;
+  abstract parse(value?: unknown): Result<TOut>;
 
   async parseAsync(value: unknown): Promise<Result<TOut>> {
     return Promise.resolve(this.parse(value));
@@ -40,8 +50,8 @@ abstract class Parser<TIn, TOut> {
     return new TransformV<TIn, TOut, U>(this, transformer);
   }
 
-  optional<U = undefined>(defaultValue?: U) {
-    return new OptionalV<TIn, TOut, U>(this, defaultValue);
+  optional() {
+    return new OptionalV<TIn, TOut>(this);
   }
 
   nullable() {
@@ -50,6 +60,16 @@ abstract class Parser<TIn, TOut> {
 
   nullish() {
     return new NullishV<TIn, TOut>(this);
+  }
+
+  array() {
+    return new ArrayV<TIn, TOut>(this);
+  }
+
+  default<U>(defaultValue: U) {
+    return new OptionalV<TIn, TOut>(this).transform((v) =>
+      v === undefined ? defaultValue : v,
+    );
   }
 }
 
@@ -71,22 +91,14 @@ class TransformV<TIn, TOut, U> extends Parser<TIn, U> {
   }
 }
 
-class OptionalV<TIn, TOut, TDefaultType = undefined> extends Parser<
-  TIn | undefined,
-  TOut | TDefaultType
-> {
-  constructor(
-    private parser: InstanceType<typeof Parser<TIn, TOut>>,
-    defaultValue?: TDefaultType,
-  ) {
-    super(defaultValue);
+class OptionalV<TIn, TOut> extends Parser<TIn | undefined, TOut | undefined> {
+  constructor(private parser: InstanceType<typeof Parser<TIn, TOut>>) {
+    super();
   }
 
-  parse(value: unknown): Result<TOut | TDefaultType> {
+  parse(value: unknown): Result<TOut | undefined> {
     if (typeof value === "undefined") {
-      if (this.defaultValue !== undefined)
-        return { success: true, out: this.defaultValue };
-      return { success: true, out: undefined as TDefaultType };
+      return { success: true, out: undefined };
     }
     return this.parser.parse(value);
   }
@@ -332,15 +344,15 @@ class NumberV extends Parser<number, number> {
   }
 }
 
-class ArrayV<T> extends Parser<T[], T[]> {
+class ArrayV<TIn, TOut> extends Parser<TIn[], TOut[]> {
   private _min: number | undefined;
   private _max: number | undefined;
 
-  constructor(private parser: InstanceType<typeof Parser<unknown, T>>) {
+  constructor(private parser: InstanceType<typeof Parser<TIn, TOut>>) {
     super();
   }
 
-  parse(value: unknown): Result<T[]> {
+  parse(value: unknown): Result<TOut[]> {
     if (!Array.isArray(value)) return { success: false, error: "Not array" };
     if (this._min !== undefined && value.length < this._min)
       return { success: false, error: `Array length < ${this._min}` };
@@ -573,11 +585,8 @@ export function number() {
 export function string() {
   return new StringV();
 }
-export function optional<T, TDefault = undefined>(
-  parser: InstanceType<typeof Parser<T, T>>,
-  defaultValue?: TDefault,
-) {
-  return new OptionalV<T, T | TDefault, TDefault>(parser, defaultValue);
+export function optional<T>(parser: InstanceType<typeof Parser<T, T>>) {
+  return new OptionalV<T, T>(parser);
 }
 export function nullable<T>(parser: InstanceType<typeof Parser<T, T>>) {
   return new NullableV<T, T>(parser);
@@ -586,7 +595,7 @@ export function nullish<T>(parser: InstanceType<typeof Parser<T, T>>) {
   return new NullishV<T, T>(parser);
 }
 export function array<T>(parser: InstanceType<typeof Parser<T, T>>) {
-  return new ArrayV<T>(parser);
+  return new ArrayV<T, T>(parser);
 }
 export function object<T extends UnknownObjectVParser>(shape: T) {
   return new ObjectV<T>(shape);

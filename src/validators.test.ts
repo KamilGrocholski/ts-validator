@@ -9,6 +9,11 @@ describe("Validators", () => {
       expect(result.success).toBe(true);
     });
 
+    test("Default date", () => {
+      const result = v.date().default(new Date()).parse();
+      expect(result.success).toBe(true);
+    });
+
     test("Valid date", () => {
       const result = v.date().parse(new Date());
       expect(result.success).toBe(true);
@@ -60,11 +65,6 @@ describe("Validators", () => {
       expect(result.success).toBe(true);
     });
 
-    test("Optional date with default", () => {
-      const result = v.optional(v.date(), new Date()).parse(undefined);
-      expect(result.success).toBe(true);
-    });
-
     test("Nullable date", () => {
       const result = v.nullable(v.date()).parse(null);
       expect(result.success).toBe(true);
@@ -82,6 +82,11 @@ describe("Validators", () => {
       expect(result.success).toBe(true);
     });
 
+    test("Default string", () => {
+      const result = v.date().default("okej").parse();
+      expect(result.success).toBe(true);
+    });
+
     test("Valid string", () => {
       const result = v.string().parse("hello");
       expect(result.success).toBe(true);
@@ -94,11 +99,6 @@ describe("Validators", () => {
 
     test("Optional string", () => {
       const result = v.optional(v.string()).parse(undefined);
-      expect(result.success).toBe(true);
-    });
-
-    test("Optional string with default", () => {
-      const result = v.optional(v.string(), "okej").parse(undefined);
       expect(result.success).toBe(true);
     });
 
@@ -130,6 +130,11 @@ describe("Validators", () => {
       expect(result.success).toBe(true);
     });
 
+    test("Default number", () => {
+      const result = v.date().default(123).parse();
+      expect(result.success).toBe(true);
+    });
+
     test("Valid number", () => {
       const result = v.number().parse(42);
       expect(result.success).toBe(true);
@@ -142,11 +147,6 @@ describe("Validators", () => {
 
     test("Optional number", () => {
       const result = v.optional(v.number()).parse(undefined);
-      expect(result.success).toBe(true);
-    });
-
-    test("Optional number with default", () => {
-      const result = v.optional(v.number(), 1).parse(undefined);
       expect(result.success).toBe(true);
     });
 
@@ -305,6 +305,11 @@ describe("Validators", () => {
       expect(result.success).toBe(true);
     });
 
+    test("Default object", () => {
+      const result = v.date().default({ ok: "tak" }).parse();
+      expect(result.success).toBe(true);
+    });
+
     test("Valid object with string and number properties", () => {
       const schema = v.object({
         name: v.string(),
@@ -380,13 +385,6 @@ describe("Validators", () => {
       expect(result.success).toBe(true);
     });
 
-    test("Optional object with default", () => {
-      const result = v
-        .optional(v.object({ a: v.string() }), { a: "okej" })
-        .parse(undefined);
-      expect(result.success).toBe(true);
-    });
-
     test("Nullable object", () => {
       const result = v.nullable(v.object({ a: v.string() })).parse(null);
       expect(result.success).toBe(true);
@@ -420,6 +418,11 @@ describe("Validators", () => {
       const result = await v
         .array(v.string())
         .parseAsync(["string1", "string2"]);
+      expect(result.success).toBe(true);
+    });
+
+    test("Default array", () => {
+      const result = v.string().array().default(["tak", "nie"]).parse();
       expect(result.success).toBe(true);
     });
 
@@ -486,13 +489,6 @@ describe("Validators", () => {
       expect(result.success).toBe(true);
     });
 
-    test("Optional array with default", () => {
-      const result = v
-        .optional(v.array(v.string()), ["okej", "okej2"])
-        .parse(undefined);
-      expect(result.success).toBe(true);
-    });
-
     test("Nullable array", () => {
       const result = v.nullable(v.array(v.string())).parse(null);
       expect(result.success).toBe(true);
@@ -515,6 +511,11 @@ describe("Validators", () => {
   describe("Union Validator", () => {
     test("Async union", async () => {
       const result = await v.union([v.string(), v.number()]).parseAsync("ok");
+      expect(result.success).toBe(true);
+    });
+
+    test("Default union", () => {
+      const result = v.union([v.string(), v.number()]).default("ok").parse();
       expect(result.success).toBe(true);
     });
 
@@ -553,13 +554,6 @@ describe("Validators", () => {
       expect(result.success).toBe(true);
     });
 
-    test("Optional union with default", () => {
-      const result = v
-        .optional(v.union([v.string(), v.number()]), "okej")
-        .parse(undefined);
-      expect(result.success).toBe(true);
-    });
-
     test("Nullable union", () => {
       const result = v.nullable(v.union([])).parse(null);
       expect(result.success).toBe(true);
@@ -582,6 +576,14 @@ describe("Validators", () => {
   describe("Literal Validator", () => {
     test("Async literal", async () => {
       const result = await v.literal("ok").parseAsync("ok");
+      expect(result.success).toBe(true);
+    });
+
+    test("Default literal", () => {
+      const result = v
+        .literal("tak")
+        .default("nie" as const)
+        .parse();
       expect(result.success).toBe(true);
     });
 
@@ -639,6 +641,14 @@ describe("Validators", () => {
       expect(result.success).toBe(true);
     });
 
+    test("Default tuple", () => {
+      const result = v
+        .tuple([v.number(), v.string()])
+        .default([1, "ok"] as [number, string])
+        .parse();
+      expect(result.success).toBe(true);
+    });
+
     test("Valid tuple with numbers", () => {
       const schema = v.tuple([v.number(), v.number()]);
       const result = schema.parse([1, 2]);
@@ -693,13 +703,6 @@ describe("Validators", () => {
       expect(result.success).toBe(true);
     });
 
-    test("Optional tuple with default", () => {
-      const result = v
-        .optional(v.tuple([v.string(), v.number()]), ["okej", 1])
-        .parse(undefined);
-      expect(result.success).toBe(true);
-    });
-
     test("Nullable tuple", () => {
       const schema = v.nullable(v.tuple([v.string(), v.number()]));
       const result = schema.parse(null);
@@ -737,6 +740,14 @@ describe("Validators", () => {
       expect(result.success).toBe(true);
     });
 
+    test("Default record", () => {
+      const result = v
+        .record(v.string())
+        .default({ key1: "value1", key2: "value2" })
+        .parse();
+      expect(result.success).toBe(true);
+    });
+
     test("Valid record", () => {
       const result = v
         .record(v.string())
@@ -753,12 +764,6 @@ describe("Validators", () => {
 
     test("Optional record", () => {
       const schema = v.optional(v.record(v.number()));
-      const result = schema.parse(undefined);
-      expect(result.success).toBe(true);
-    });
-
-    test("Optional record with default", () => {
-      const schema = v.optional(v.record(v.number()), { key: 1 });
       const result = schema.parse(undefined);
       expect(result.success).toBe(true);
     });
