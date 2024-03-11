@@ -39,6 +39,18 @@ abstract class Parser<TIn, TOut> {
   transform<U>(transformer: (value: TOut) => U): Parser<TIn, U> {
     return new TransformV<TIn, TOut, U>(this, transformer);
   }
+
+  optional<U = undefined>(defaultValue?: U) {
+    return new OptionalV<TIn, TOut, U>(this, defaultValue);
+  }
+
+  nullable() {
+    return new NullableV<TIn, TOut>(this);
+  }
+
+  nullish() {
+    return new NullishV<TIn, TOut>(this);
+  }
 }
 
 class TransformV<TIn, TOut, U> extends Parser<TIn, U> {
@@ -59,18 +71,18 @@ class TransformV<TIn, TOut, U> extends Parser<TIn, U> {
   }
 }
 
-class OptionalV<
-  T,
-  TDefaultType extends T | undefined = T | undefined,
-> extends Parser<T | TDefaultType, T | TDefaultType> {
+class OptionalV<TIn, TOut, TDefaultType = undefined> extends Parser<
+  TIn | undefined,
+  TOut | TDefaultType
+> {
   constructor(
-    private parser: InstanceType<typeof Parser<T, T>>,
+    private parser: InstanceType<typeof Parser<TIn, TOut>>,
     defaultValue?: TDefaultType,
   ) {
     super(defaultValue);
   }
 
-  parse(value: unknown): Result<T | TDefaultType> {
+  parse(value: unknown): Result<TOut | TDefaultType> {
     if (typeof value === "undefined") {
       if (this.defaultValue !== undefined)
         return { success: true, out: this.defaultValue };
@@ -80,23 +92,26 @@ class OptionalV<
   }
 }
 
-class NullableV<T> extends Parser<T | null, T | null> {
-  constructor(private parser: InstanceType<typeof Parser<T, T>>) {
+class NullableV<TIn, TOut> extends Parser<TIn | null, TOut | null> {
+  constructor(private parser: InstanceType<typeof Parser<TIn, TOut>>) {
     super();
   }
 
-  parse(value: T | null): Result<T | null> {
+  parse(value: unknown): Result<TOut | null> {
     if (value === null) return { success: true, out: null };
     return this.parser.parse(value);
   }
 }
 
-class NullishV<T> extends Parser<T | null | undefined, T | null | undefined> {
-  constructor(private parser: InstanceType<typeof Parser<unknown, T>>) {
+class NullishV<TIn, TOut> extends Parser<
+  TIn | null | undefined,
+  TOut | null | undefined
+> {
+  constructor(private parser: InstanceType<typeof Parser<TIn, TOut>>) {
     super();
   }
 
-  parse(value: unknown): Result<T | null | undefined> {
+  parse(value: unknown): Result<TOut | null | undefined> {
     if (value === null || value === undefined)
       return { success: true, out: value };
     return this.parser.parse(value);
@@ -373,24 +388,49 @@ class ObjectV<T extends UnknownObjectVParser> extends Parser<
   parse(value: unknown): Result<{
     [Key in keyof T]: InferOut<T[Key]>;
   }> {
-    if (typeof value !== "object")
-      return { success: false, error: "Not object" };
-    if (value === null) return { success: false, error: "Object is null" };
+    const { out, errors } = this.collectErrors(value, "");
 
-    const out = {} as {
-      [Key in keyof T]: InferOut<T[Key]>;
-    };
-
-    for (const key in this.shape) {
-      // @ts-ignore
-      const res = this.shape[key].parse(value[key]);
-      if (!res.success)
-        return { success: false, error: `{ field: [${key}]: ${res.error} }` };
-      // @ts-ignore
-      out[key] = res.out;
+    if (errors.length > 0) {
+      const errorMessages = errors
+        .map(({ key, error }) => `${key}: ${error}`)
+        .join(", ");
+      return { success: false, error: errorMessages };
     }
 
     return { success: true, out };
+  }
+
+  private collectErrors(
+    value: unknown,
+    path: string,
+  ): {
+    out: { [Key in keyof T]: InferOut<T[Key]> };
+    errors: { key: string; error: string }[];
+  } {
+    if (typeof value !== "object" || value === null) {
+      return {
+        out: {} as { [Key in keyof T]: InferOut<T[Key]> },
+        errors: [{ key: path, error: "Not object" }],
+      };
+    }
+
+    const out = {} as { [Key in keyof T]: InferOut<T[Key]> };
+    const errors: { key: string; error: string }[] = [];
+
+    for (const key in this.shape) {
+      const newPath = path ? `${path}.${key}` : key;
+      // @ts-ignore
+      const res = this.shape[key].parse(value[key]);
+      if (!res.success) {
+        // @ts-ignore
+        errors.push({ key: newPath, error: res.error });
+      } else {
+        // @ts-ignore
+        out[key] = res.out;
+      }
+    }
+
+    return { out, errors };
   }
 
   pick<TPicked extends keyof T>(picked: { [Key in TPicked]: boolean }): ObjectV<
@@ -416,8 +456,12 @@ class ObjectV<T extends UnknownObjectVParser> extends Parser<
     return new ObjectV(omitShape);
   }
 
-  partial(): ObjectV<{ [Key in keyof T]: OptionalV<T[Key]> }> {
-    const shallowOptional: { [Key in keyof T]: OptionalV<T[Key]> } = {} as any;
+  partial(): ObjectV<{
+    [Key in keyof T]: OptionalV<InferIn<T[Key]>, InferOut<T[Key]>>;
+  }> {
+    const shallowOptional: {
+      [Key in keyof T]: OptionalV<InferIn<T[Key]>, InferOut<T[Key]>>;
+    } = {} as any;
     for (const key in this.shape) {
       // @ts-ignore
       shallowOptional[key] = new OptionalV(this.shape[key]);
@@ -529,17 +573,17 @@ export function number() {
 export function string() {
   return new StringV();
 }
-export function optional<T, TDefault extends T | undefined = T | undefined>(
+export function optional<T, TDefault = undefined>(
   parser: InstanceType<typeof Parser<T, T>>,
   defaultValue?: TDefault,
 ) {
-  return new OptionalV<T, TDefault>(parser, defaultValue);
+  return new OptionalV<T, T | TDefault, TDefault>(parser, defaultValue);
 }
 export function nullable<T>(parser: InstanceType<typeof Parser<T, T>>) {
-  return new NullableV<T>(parser);
+  return new NullableV<T, T>(parser);
 }
 export function nullish<T>(parser: InstanceType<typeof Parser<T, T>>) {
-  return new NullishV<T>(parser);
+  return new NullishV<T, T>(parser);
 }
 export function array<T>(parser: InstanceType<typeof Parser<T, T>>) {
   return new ArrayV<T>(parser);
