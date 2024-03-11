@@ -5,16 +5,6 @@ export type Result<TOut> =
 export type UnknownObjectVParser = { [key: string]: UnknownVParser };
 export type UnknownVParser = Parser<unknown, unknown>;
 
-type KeysOfType<T, SelectedType> = {
-  [key in keyof T]: SelectedType extends T[key] ? key : never;
-}[keyof T];
-
-type Optional<T> = Partial<Pick<T, KeysOfType<T, undefined>>>;
-
-type Required<T> = Omit<T, KeysOfType<T, undefined>>;
-
-export type OptionalUndefined<T> = Optional<T> & Required<T>;
-
 export type InferIn<T extends UnknownVParser> = T extends Parser<
   infer U,
   infer _
@@ -42,7 +32,7 @@ abstract class Parser<TIn, TOut> {
 
   abstract parse(value?: unknown): Result<TOut>;
 
-  async parseAsync(value: unknown): Promise<Result<TOut>> {
+  async parseAsync(value?: unknown): Promise<Result<TOut>> {
     return Promise.resolve(this.parse(value));
   }
 
@@ -100,7 +90,7 @@ class OptionalV<TIn, TOut> extends Parser<TIn | undefined, TOut | undefined> {
     if (typeof value === "undefined") {
       return { success: true, out: undefined };
     }
-    return this.parser.parse(value);
+    return this.parser.parse(value as TIn);
   }
 }
 
@@ -385,21 +375,21 @@ class ArrayV<TIn, TOut> extends Parser<TIn[], TOut[]> {
   }
 }
 
+type InferObjectVIn<T extends UnknownObjectVParser> = {
+  [Key in keyof T]: InferIn<T[Key]>;
+};
+type InferObjectVOut<T extends UnknownObjectVParser> = {
+  [Key in keyof T]: InferOut<T[Key]>;
+};
 class ObjectV<T extends UnknownObjectVParser> extends Parser<
-  {
-    [Key in keyof T]: InferIn<T[Key]>;
-  },
-  {
-    [Key in keyof T]: InferOut<T[Key]>;
-  }
+  InferObjectVIn<T>,
+  InferObjectVOut<T>
 > {
   constructor(private shape: T) {
     super();
   }
 
-  parse(value: unknown): Result<{
-    [Key in keyof T]: InferOut<T[Key]>;
-  }> {
+  parse(value: unknown): Result<InferObjectVOut<T>> {
     const { out, errors } = this.collectErrors(value, "");
 
     if (errors.length > 0) {
@@ -409,14 +399,14 @@ class ObjectV<T extends UnknownObjectVParser> extends Parser<
       return { success: false, error: errorMessages };
     }
 
-    return { success: true, out };
+    return { success: true, out: out as InferObjectVOut<T> };
   }
 
   private collectErrors(
     value: unknown,
     path: string,
   ): {
-    out: { [Key in keyof T]: InferOut<T[Key]> };
+    out: InferObjectVOut<T>;
     errors: { key: string; error: string }[];
   } {
     if (typeof value !== "object" || value === null) {
@@ -426,7 +416,7 @@ class ObjectV<T extends UnknownObjectVParser> extends Parser<
       };
     }
 
-    const out = {} as { [Key in keyof T]: InferOut<T[Key]> };
+    const out = {} as InferObjectVOut<T>;
     const errors: { key: string; error: string }[] = [];
 
     for (const key in this.shape) {
