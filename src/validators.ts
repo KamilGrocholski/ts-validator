@@ -2,19 +2,23 @@ export type Result<TOut> =
   | { success: true; out: TOut }
   | { success: false; error: unknown };
 
-export type UnknownObjectVParser = { [key: string]: UnknownVParser };
+export type UnknownObjectVParser = Record<string, UnknownVParser>;
 export type UnknownVParser = Parser<unknown, unknown>;
 
-type MakeUndefinedFieldsOptional<T extends { [key: string]: unknown }> = {
+type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
+type UndefinedProps<T extends object> = {
   [K in keyof T as undefined extends T[K] ? K : never]?: T[K];
 };
+type MakeUndefinedFieldsOptional<T extends object> = Expand<
+  UndefinedProps<T> & Omit<T, keyof UndefinedProps<T>>
+>;
 
 export type InferIn<T extends UnknownVParser> = T extends Parser<
   infer U,
   infer _
 >
   ? U extends UnknownObjectVParser
-    ? MakeUndefinedFieldsOptional<{ [Key in keyof U]: InferIn<U[Key]> }>
+    ? MakeUndefinedFieldsOptional<{ [Key in keyof U]-?: InferIn<U[Key]> }>
     : U
   : never;
 
@@ -23,7 +27,7 @@ export type InferOut<T extends UnknownVParser> = T extends Parser<
   infer U
 >
   ? U extends UnknownObjectVParser
-    ? MakeUndefinedFieldsOptional<{ [Key in keyof U]: InferOut<U[Key]> }>
+    ? MakeUndefinedFieldsOptional<{ [Key in keyof U]-?: InferOut<U[Key]> }>
     : U
   : never;
 
@@ -380,11 +384,11 @@ class ArrayV<TIn, TOut> extends Parser<TIn[], TOut[]> {
 
 type InferObjectVIn<T extends UnknownObjectVParser> =
   MakeUndefinedFieldsOptional<{
-    [Key in keyof T]: InferIn<T[Key]>;
+    [Key in keyof T]-?: InferIn<T[Key]>;
   }>;
 type InferObjectVOut<T extends UnknownObjectVParser> =
   MakeUndefinedFieldsOptional<{
-    [Key in keyof T]: InferOut<T[Key]>;
+    [Key in keyof T]-?: InferOut<T[Key]>;
   }>;
 class ObjectV<T extends UnknownObjectVParser> extends Parser<
   InferObjectVIn<T>,
@@ -416,7 +420,9 @@ class ObjectV<T extends UnknownObjectVParser> extends Parser<
   } {
     if (typeof value !== "object" || value === null) {
       return {
-        out: {} as { [Key in keyof T]: InferOut<T[Key]> },
+        out: {} as MakeUndefinedFieldsOptional<{
+          [Key in keyof T]-?: InferOut<T[Key]>;
+        }>,
         errors: [{ key: path, error: "Not object" }],
       };
     }
@@ -460,7 +466,7 @@ class ObjectV<T extends UnknownObjectVParser> extends Parser<
         omitShape[key] = this.shape[key];
       }
     }
-    return new ObjectV(omitShape);
+    return new ObjectV(omitShape) as unknown as ObjectV<Omit<T, TOmit>>;
   }
 
   partial(): ObjectV<{
