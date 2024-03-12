@@ -5,12 +5,16 @@ export type Result<TOut> =
 export type UnknownObjectVParser = { [key: string]: UnknownVParser };
 export type UnknownVParser = Parser<unknown, unknown>;
 
+type MakeUndefinedFieldsOptional<T extends { [key: string]: unknown }> = {
+  [K in keyof T as undefined extends T[K] ? K : never]?: T[K];
+};
+
 export type InferIn<T extends UnknownVParser> = T extends Parser<
   infer U,
   infer _
 >
   ? U extends UnknownObjectVParser
-    ? { [Key in keyof U]: InferIn<U[Key]> }
+    ? MakeUndefinedFieldsOptional<{ [Key in keyof U]: InferIn<U[Key]> }>
     : U
   : never;
 
@@ -19,11 +23,11 @@ export type InferOut<T extends UnknownVParser> = T extends Parser<
   infer U
 >
   ? U extends UnknownObjectVParser
-    ? { [Key in keyof U]: InferOut<U[Key]> }
+    ? MakeUndefinedFieldsOptional<{ [Key in keyof U]: InferOut<U[Key]> }>
     : U
   : never;
 
-abstract class Parser<TIn, TOut> {
+export abstract class Parser<TIn, TOut> {
   protected defaultValue?: TOut;
 
   constructor(defaultValue?: TOut) {
@@ -360,7 +364,6 @@ class ArrayV<TIn, TOut> extends Parser<TIn[], TOut[]> {
       parsed.push(res.out);
     }
 
-    // @ts-ignore
     return { success: true, out: parsed };
   }
 
@@ -375,12 +378,14 @@ class ArrayV<TIn, TOut> extends Parser<TIn[], TOut[]> {
   }
 }
 
-type InferObjectVIn<T extends UnknownObjectVParser> = {
-  [Key in keyof T]: InferIn<T[Key]>;
-};
-type InferObjectVOut<T extends UnknownObjectVParser> = {
-  [Key in keyof T]: InferOut<T[Key]>;
-};
+type InferObjectVIn<T extends UnknownObjectVParser> =
+  MakeUndefinedFieldsOptional<{
+    [Key in keyof T]: InferIn<T[Key]>;
+  }>;
+type InferObjectVOut<T extends UnknownObjectVParser> =
+  MakeUndefinedFieldsOptional<{
+    [Key in keyof T]: InferOut<T[Key]>;
+  }>;
 class ObjectV<T extends UnknownObjectVParser> extends Parser<
   InferObjectVIn<T>,
   InferObjectVOut<T>
@@ -480,8 +485,7 @@ class UnionV<T extends UnknownVParser> extends Parser<InferIn<T>, InferOut<T>> {
   parse(value: unknown): Result<InferOut<T>> {
     for (const parser of this.parsers) {
       const res = parser.parse(value);
-      // @ts-ignore
-      if (res.success) return res;
+      if (res.success) return res as Result<InferOut<T>>;
     }
 
     return { success: false, error: "Not in or" };
@@ -497,8 +501,7 @@ class LiteralV<
 
   parse(value: unknown): Result<T> {
     if (value !== this.lit) return { success: false, error: `Not ${this.lit}` };
-    // @ts-ignore
-    return { success: true, out: value };
+    return { success: true, out: value as T };
   }
 }
 
@@ -528,8 +531,7 @@ class TupleV<T extends TupleVItems> extends Parser<TupleVIn<T>, TupleVOut<T>> {
       out[i] = res.out;
     }
 
-    // @ts-ignore
-    return { success: true, out };
+    return { success: true, out: out as TupleVOut<T> };
   }
 }
 
@@ -548,17 +550,15 @@ class RecordV<T extends UnknownVParser> extends Parser<
   parse(value: unknown): Result<{ [key: string]: InferOut<T> }> {
     if (typeof value !== "object") return { success: false, error: null };
     if (value === null) return { success: false, error: null };
-    const out = {};
+    const out = {} as { [key: string]: InferOut<T> };
 
     for (const key in value) {
       // @ts-ignore
       const res = this.parser.parse(value[key]);
       if (!res.success) return { success: false, error: null };
-      // @ts-ignore
-      out[key] = res.out;
+      out[key] = res.out as InferOut<T>;
     }
 
-    // @ts-ignore
     return { success: true, out };
   }
 }

@@ -20,7 +20,7 @@ describe("Validators", () => {
     });
 
     test("Invalid date", () => {
-      const result = v.date().parse("invalida");
+      const result = v.date().parse({});
       expect(result.success).toBe(false);
     });
 

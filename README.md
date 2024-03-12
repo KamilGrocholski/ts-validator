@@ -22,10 +22,6 @@ export type Result<T> =
 
 ### InferIn type
 
-Not implemented yet:
-
-- undefined type does not make key optional
-
 ```typescript
 const userSchema = v.object({
   name: v.string(),
@@ -35,10 +31,6 @@ type User = InferIn<typeof userSchema>; // { name: string, age: number }
 ```
 
 ### InferOut type
-
-Not implemented yet:
-
-- undefined type does not make key optional
 
 ```typescript
 const userSchema = v.object({
