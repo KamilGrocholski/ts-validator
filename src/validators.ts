@@ -554,18 +554,32 @@ class RecordV<T extends UnknownVParser> extends Parser<
   }
 
   parse(value: unknown): Result<{ [key: string]: InferOut<T> }> {
-    if (typeof value !== "object") return { success: false, error: null };
-    if (value === null) return { success: false, error: null };
+    if (typeof value !== "object")
+      return { success: false, error: "Not object" };
+    if (Array.isArray(value))
+      return { success: false, error: "Array instead of object" };
+    if (value === null) return { success: false, error: "Null" };
     const out = {} as { [key: string]: InferOut<T> };
 
     for (const key in value) {
       // @ts-ignore
       const res = this.parser.parse(value[key]);
-      if (!res.success) return { success: false, error: null };
+      if (!res.success) return res;
       out[key] = res.out as InferOut<T>;
     }
 
     return { success: true, out };
+  }
+}
+
+class NullV extends Parser<null, null> {
+  constructor() {
+    super();
+  }
+
+  parse(value: unknown): Result<null> {
+    if (value !== null) return { success: false, error: "Not null" };
+    return { success: true, out: null };
   }
 }
 
@@ -580,6 +594,9 @@ export function number() {
 }
 export function string() {
   return new StringV();
+}
+export function nulla() {
+  return new NullV();
 }
 export function optional<T>(parser: InstanceType<typeof Parser<T, T>>) {
   return new OptionalV<T, T>(parser);

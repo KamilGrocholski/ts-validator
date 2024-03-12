@@ -780,4 +780,26 @@ describe("Validators", () => {
       expect(result.success).toBe(true);
     });
   });
+
+  describe("Nulla validator", () => {
+    test("Null async", async () => {
+      const result = await v.nulla().parseAsync(null);
+      expect(result.success).toBe(true);
+    });
+
+    test("Valid null", () => {
+      const result = v.nulla().parse(null);
+      expect(result.success).toBe(true);
+    });
+
+    test("Invalid null", () => {
+      const result = v.nulla().parse(2);
+      expect(result.success).toBe(false);
+    });
+
+    test("Empty object", () => {
+      const result = v.nulla().parse({});
+      expect(result.success).toBe(false);
+    });
+  });
 });
