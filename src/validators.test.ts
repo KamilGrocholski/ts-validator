@@ -3,6 +3,18 @@ import { describe, expect, test } from "bun:test";
 import { v } from "./";
 
 describe("Validators", () => {
+  describe("Unknown validator", () => {
+    test("Async unknown", async () => {
+      const result = await v.unknown().parseAsync("ok");
+      expect(result.success).toBe(true);
+    });
+
+    test("Unknown", () => {
+      const result = v.unknown().parse("ok");
+      expect(result.success).toBe(true);
+    });
+  });
+
   describe("Date validator", () => {
     test("Async date", async () => {
       const result = await v.date().parseAsync(new Date());

@@ -583,6 +583,16 @@ class NullV extends Parser<null, null> {
   }
 }
 
+class UnknownV extends Parser<unknown, unknown> {
+  constructor() {
+    super();
+  }
+
+  parse(value: unknown): Result<unknown> {
+    return { success: true, out: value };
+  }
+}
+
 export function date() {
   return new DateV();
 }
@@ -597,6 +607,9 @@ export function string() {
 }
 export function nulla() {
   return new NullV();
+}
+export function unknown() {
+  return new UnknownV();
 }
 export function optional<T>(parser: InstanceType<typeof Parser<T, T>>) {
   return new OptionalV<T, T>(parser);
