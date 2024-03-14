@@ -2,7 +2,9 @@ export type Result<TOut> =
   | { success: true; out: TOut }
   | { success: false; error: unknown };
 
-export type UnknownObjectVParser = Record<string, UnknownVParser>;
+export type UnknownObjectVParser<T extends string = string> = {
+  [Key in T]: UnknownVParser;
+};
 export type UnknownVParser = Parser<unknown, unknown>;
 
 type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
@@ -411,6 +413,10 @@ class ObjectV<T extends UnknownObjectVParser> extends Parser<
     return { success: true, out: out as InferObjectVOut<T> };
   }
 
+  getFieldParserByKey(key: string): UnknownVParser | undefined {
+    return this.shape[key];
+  }
+
   private collectErrors(
     value: unknown,
     path: string,
@@ -593,6 +599,59 @@ class UnknownV extends Parser<unknown, unknown> {
   }
 }
 
+class DiscriminatedUnionV<
+  const TDiscriminator extends string,
+  TShape extends ObjectV<{ [Key in TDiscriminator]: UnknownVParser }>,
+> extends Parser<InferIn<TShape>, InferOut<TShape>> {
+  private discriminatorParsers: [UnknownVParser, TShape][];
+
+  constructor(
+    private discriminator: TDiscriminator,
+    private parsers: TShape[],
+  ) {
+    super();
+    this.discriminatorParsers = this.constructDiscriminatorParsers();
+  }
+
+  private constructDiscriminatorParsers(): [UnknownVParser, TShape][] {
+    const list: [UnknownVParser, TShape][] = [];
+
+    for (const parser of this.parsers) {
+      const discriminatedShape = parser.getFieldParserByKey(this.discriminator);
+      if (discriminatedShape) {
+        list.push([discriminatedShape, parser]);
+      }
+    }
+
+    return list;
+  }
+
+  parse(value: unknown): Result<InferOut<TShape>> {
+    if (typeof value !== "object")
+      return { success: false, error: "Not object" };
+    if (value === null) return { success: false, error: "Empty object" };
+    if (Array.isArray(value)) return { success: false, error: "Array" };
+
+    // @ts-ignore
+    const discriminatorFromValue = value[this.discriminator];
+    if (discriminatorFromValue === undefined)
+      return {
+        success: false,
+        error: `Discriminator key '${this.discriminator}' not found`,
+      };
+
+    for (const [discriminatorParser, shape] of this.discriminatorParsers) {
+      if (discriminatorParser.parse(discriminatorFromValue).success) {
+        return shape.parse(value) as Result<InferOut<TShape>>;
+      }
+    }
+    return {
+      success: false,
+      error: `No parser found for discriminator value: ${discriminatorFromValue}`,
+    };
+  }
+}
+
 export function date() {
   return new DateV();
 }
@@ -628,6 +687,12 @@ export function object<T extends UnknownObjectVParser>(shape: T) {
 }
 export function union<T extends UnknownVParser>(parsers: T[]) {
   return new UnionV<T>(parsers);
+}
+export function discriminatedUnion<
+  const TDiscriminator extends string,
+  TShape extends ObjectV<{ [Key in TDiscriminator]: UnknownVParser }>,
+>(discriminator: TDiscriminator, shape: TShape[]) {
+  return new DiscriminatedUnionV<TDiscriminator, TShape>(discriminator, shape);
 }
 export function literal<
   const T extends string | number | boolean | null | undefined,

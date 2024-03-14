@@ -163,6 +163,15 @@ type Schema = InferOut<typeof schema>; // "NO" | "YES"
 console.log(result); // { success: true, out: "YES" }
 ```
 
+### UnknownV
+
+```typescript
+const schema = v.unknown();
+const result = schema.parse("ok");
+type Schema = InferOut<typeof schema>; // unknown
+console.log(result); // { success: true, out: "ok" }
+```
+
 ### Default
 
 ```typescript
@@ -179,6 +188,41 @@ const schema = v.number();
 const result = await schema.parseAsync(2);
 type Schema = InferOut<typeof schema>; // number
 console.log(result); // { success: true, out: 2 }
+```
+
+### UnknownV
+
+```typescript
+const schema = v.unknown();
+const result = schema.parse("string value");
+type Schema = InferOut<typeof schema>; // unknown
+console.log(result); // { success: true, out: "string value" }
+```
+
+### DiscriminatedUnionV
+
+```typescript
+type UserActionIn = InferIn<typeof userActionSchema>;
+type UserActionOut = InferOut<typeof userActionSchema>;
+
+const userActionSchema = v.discriminatedUnion("type", [
+  v.object({
+    type: v.literal("add"),
+    input: v.object({ name: v.string(), age: v.number() }),
+  }),
+  v.object({
+    type: v.literal("remove"),
+    input: v.object({ id: v.number() }),
+  }),
+  v.object({
+    type: v.literal("update"),
+    input: v.object({
+      id: v.number(),
+      name: v.string().optional(),
+      age: v.number().optional(),
+    }),
+  }),
+]);
 ```
 
 This project was created using `bun init` in bun v1.0.11. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.

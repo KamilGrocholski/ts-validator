@@ -1,29 +1,53 @@
 import { describe, expect, test } from "bun:test";
 
-import { v } from "./";
+import { Result, v } from "./";
+
+function expectNotSuccess(result: Result<unknown>) {
+  expect(result.success).toBe(false);
+}
+
+function expectSuccess(result: Result<unknown>) {
+  expect(result.success).toBe(true);
+}
+
+function expectOut(expectedOut: unknown, result: Result<unknown>) {
+  expect(result.success).toBe(true);
+  // @ts-ignore
+  expect(result.out).toEqual(expectedOut);
+}
+
+function expectError(expectedError: unknown, result: Result<unknown>) {
+  expect(result.success).toBe(false);
+  // @ts-ignore
+  expect(result.error).toEqual(expectedError);
+}
 
 describe("Validators", () => {
   describe("Unknown validator", () => {
     test("Async unknown", async () => {
-      const result = await v.unknown().parseAsync("ok");
-      expect(result.success).toBe(true);
+      const input = "ok";
+      const result = await v.unknown().parseAsync(input);
+      expectOut(input, result);
     });
 
     test("Unknown", () => {
-      const result = v.unknown().parse("ok");
-      expect(result.success).toBe(true);
+      const input = "ok";
+      const result = v.unknown().parse(input);
+      expectOut(input, result);
     });
   });
 
   describe("Date validator", () => {
     test("Async date", async () => {
-      const result = await v.date().parseAsync(new Date());
-      expect(result.success).toBe(true);
+      const input = new Date();
+      const result = await v.date().parseAsync(input);
+      expectOut(input, result);
     });
 
     test("Default date", () => {
-      const result = v.date().default(new Date()).parse();
-      expect(result.success).toBe(true);
+      const input = new Date();
+      const result = v.date().default(input).parse();
+      expectOut(input, result);
     });
 
     test("Valid date", () => {
@@ -95,33 +119,36 @@ describe("Validators", () => {
     });
 
     test("Default string", () => {
-      const result = v.date().default("okej").parse();
-      expect(result.success).toBe(true);
+      const input = "ok";
+      const result = v.string().default(input).parse();
+      expectOut(input, result);
     });
 
     test("Valid string", () => {
-      const result = v.string().parse("hello");
-      expect(result.success).toBe(true);
+      const input = "ok";
+      const result = v.string().parse(input);
+      expectOut(input, result);
     });
 
     test("Invalid string", () => {
-      const result = v.string().parse(123);
-      expect(result.success).toBe(false);
+      const input = 123;
+      const result = v.string().parse(input);
+      expectNotSuccess(result);
     });
 
     test("Optional string", () => {
       const result = v.optional(v.string()).parse(undefined);
-      expect(result.success).toBe(true);
+      expectSuccess(result);
     });
 
     test("Nullable string", () => {
       const result = v.nullable(v.string()).parse(null);
-      expect(result.success).toBe(true);
+      expectOut(null, result);
     });
 
     test("Nullish string", () => {
       const result = v.nullish(v.string()).parse(null);
-      expect(result.success).toBe(true);
+      expectOut(null, result);
     });
 
     test("Transform string", () => {
@@ -812,6 +839,46 @@ describe("Validators", () => {
     test("Empty object", () => {
       const result = v.nulla().parse({});
       expect(result.success).toBe(false);
+    });
+  });
+
+  describe("Discriminated union validator", () => {
+    test("Match successfully", () => {
+      const schema = v.discriminatedUnion("type", [
+        v.object({ type: v.literal("add"), input: v.string() }),
+        v.object({ type: v.literal("remove"), input: v.number() }),
+        v.object({ type: v.literal("reset"), input: v.boolean() }),
+      ]);
+      const input1 = { type: "add", input: "okej" };
+      const result1 = schema.parse(input1);
+      expectOut(input1, result1);
+
+      const input2 = { type: "remove", input: 2 };
+      const result2 = schema.parse(input2);
+      expectOut(input2, result2);
+
+      const input3 = { type: "reset", input: true };
+      const result3 = schema.parse(input3);
+      expectOut(input3, result3);
+    });
+
+    test("Match error", () => {
+      const schema = v.discriminatedUnion("type", [
+        v.object({ type: v.literal("add"), input: v.string() }),
+        v.object({ type: v.literal("remove"), input: v.number() }),
+        v.object({ type: v.literal("reset"), input: v.boolean() }),
+      ]);
+      const input1 = { type: "add", input: true };
+      const result1 = schema.parse(input1);
+      expectNotSuccess(result1);
+
+      const input2 = { type: "remove", input: "okej" };
+      const result2 = schema.parse(input2);
+      expectNotSuccess(result2);
+
+      const input3 = { type: "reset", input: null };
+      const result3 = schema.parse(input3);
+      expectNotSuccess(result3);
     });
   });
 });
