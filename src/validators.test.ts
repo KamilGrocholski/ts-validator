@@ -337,6 +337,12 @@ describe("Validators", () => {
   });
 
   describe("Object validator", () => {
+    test("Object field", () => {
+      const input = "value";
+      const result = v.object({ key1: v.string() }).field("key1").parse(input);
+      expectOut(input, result);
+    });
+
     test("Async object", async () => {
       const result = await v
         .object({ a: v.string() })
@@ -675,6 +681,12 @@ describe("Validators", () => {
   });
 
   describe("Tuple Validator", () => {
+    test("Tuple index", () => {
+      const input = "value";
+      const result = v.tuple([v.string()]).index(0).parse(input);
+      expectOut(input, result);
+    });
+
     test("Async tuple", async () => {
       const result = await v.tuple([v.string()]).parseAsync(["ok"]);
       expect(result.success).toBe(true);

@@ -413,7 +413,7 @@ class ObjectV<T extends UnknownObjectVParser> extends Parser<
     return { success: true, out: out as InferObjectVOut<T> };
   }
 
-  getFieldParserByKey(key: string): UnknownVParser | undefined {
+  field<Key extends keyof T>(key: Key): T[Key] {
     return this.shape[key];
   }
 
@@ -545,6 +545,10 @@ class TupleV<T extends TupleVItems> extends Parser<TupleVIn<T>, TupleVOut<T>> {
 
     return { success: true, out: out as TupleVOut<T> };
   }
+
+  index<Key extends keyof T>(index: Key): T[Key] {
+    return this.parsers[index];
+  }
 }
 
 class RecordV<T extends UnknownVParser> extends Parser<
@@ -617,7 +621,7 @@ class DiscriminatedUnionV<
     const list: [UnknownVParser, TShape][] = [];
 
     for (const parser of this.parsers) {
-      const discriminatedShape = parser.getFieldParserByKey(this.discriminator);
+      const discriminatedShape = parser.field(this.discriminator);
       if (discriminatedShape) {
         list.push([discriminatedShape, parser]);
       }

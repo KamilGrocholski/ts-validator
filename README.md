@@ -46,6 +46,9 @@ type User = InferOut<typeof userSchema>; // { name: string, age: "Y" | "N" }
 const schema = v.date();
 const result = schema.parse(new Date("2024-03-10T21:18:51.222Z"));
 console.log(result); // { success: true, out: "2024-03-10T21:18:51.222Z" }
+
+schema.min(new Date());
+schema.max(new Date());
 ```
 
 ### BooleanV
@@ -62,6 +65,9 @@ console.log(result); // { success: true, out: true }
 const schema = v.string().min(1).max(6);
 const result = schema.parse("String");
 console.log(result); // { success: true, out: "String" }
+
+schema.min(1);
+schema.max(5);
 ```
 
 ### NumberV
@@ -70,6 +76,16 @@ console.log(result); // { success: true, out: "String" }
 const schema = v.number().min(0).max(10);
 const result = schema.parse(5);
 console.log(result); // { success: true, out: 5 }
+
+schema.min(0);
+schema.max(10);
+schema.lt(10);
+schema.lte(10);
+schema.gt(10);
+schema.gte(10);
+schema.safe();
+schema.int();
+schema.finite();
 ```
 
 ### ArrayV
@@ -92,6 +108,11 @@ const result = schema.parse({
   b: 1234,
 });
 console.log(result); // { success: true, out: { a: "String", b: 1234 } }
+
+schema.partial();
+schema.pick({ a: true });
+schema.omit({ a: true });
+schema.field("a");
 ```
 
 ### UnionV
@@ -118,6 +139,8 @@ console.log(result); // { success: true, out: "String" }
 const schema = v.tuple([v.string(), v.number()]);
 const result = schema.parse(["String", 1]);
 console.log(result); // { success: true, out: ["String", 1] }
+
+schema.index(0);
 ```
 
 ### RecordV
