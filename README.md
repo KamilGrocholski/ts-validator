@@ -119,10 +119,10 @@ schema.field("a");
 
 ```typescript
 const schema = v.union([v.number(), v.string()]);
-const result1 = schema.parse([1]);
-const result2 = schema.parse(["String"]);
-console.log(result1); // { success: true, out: [1] }
-console.log(result2); // { success: true, out: ["String"] }
+const result1 = schema.parse(1);
+const result2 = schema.parse("String");
+console.log(result1); // { success: true, out: 1 }
+console.log(result2); // { success: true, out: "String" }
 ```
 
 ### LiteralV
