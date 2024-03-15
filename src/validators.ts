@@ -475,7 +475,7 @@ class ObjectV<T extends UnknownObjectVParser> extends Parser<
     return new ObjectV(newShape) as TNewShape;
   }
 
-  pick<TPicked extends keyof T>(picked: { [Key in TPicked]: boolean }): ObjectV<
+  pick<TPicked extends keyof T>(picked: { [Key in TPicked]: true }): ObjectV<
     Pick<T, TPicked>
   > {
     const pickedShape = {} as { [Key in TPicked]: T[Key] };
