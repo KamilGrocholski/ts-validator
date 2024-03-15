@@ -2,8 +2,8 @@ export type Result<TOut> =
   | { success: true; out: TOut }
   | { success: false; error: unknown };
 
-export type UnknownObjectVParser<T extends string = string> = {
-  [Key in T]: UnknownVParser;
+export type UnknownObjectVParser = {
+  [Key: string]: UnknownVParser;
 };
 export type UnknownVParser = Parser<unknown, unknown>;
 
@@ -347,6 +347,7 @@ class NumberV extends Parser<number, number> {
 class ArrayV<TIn, TOut> extends Parser<TIn[], TOut[]> {
   private _min: number | undefined;
   private _max: number | undefined;
+  private _length: number | undefined;
 
   constructor(private parser: InstanceType<typeof Parser<TIn, TOut>>) {
     super();
@@ -354,6 +355,8 @@ class ArrayV<TIn, TOut> extends Parser<TIn[], TOut[]> {
 
   parse(value: unknown): Result<TOut[]> {
     if (!Array.isArray(value)) return { success: false, error: "Not array" };
+    if (this._length !== undefined && value.length === this._length)
+      return { success: false, error: `Array length !== ${this._length}` };
     if (this._min !== undefined && value.length < this._min)
       return { success: false, error: `Array length < ${this._min}` };
     if (this._max !== undefined && value.length > this._max)
@@ -380,6 +383,11 @@ class ArrayV<TIn, TOut> extends Parser<TIn[], TOut[]> {
 
   max(len: number) {
     this._max = len;
+    return this;
+  }
+
+  length(len: number) {
+    this._length = len;
     return this;
   }
 }
@@ -450,6 +458,21 @@ class ObjectV<T extends UnknownObjectVParser> extends Parser<
     }
 
     return { out, errors };
+  }
+
+  extend<
+    TExtensionShape extends UnknownObjectVParser,
+    TNewShape = ObjectV<Omit<T, keyof TExtensionShape> & TExtensionShape>,
+  >(extensionShape: TExtensionShape): TNewShape {
+    const newShape = { ...this.shape } as {
+      [Key in keyof (T & TExtensionShape)]: UnknownVParser;
+    };
+
+    for (const key in extensionShape) {
+      newShape[key] = extensionShape[key];
+    }
+
+    return new ObjectV(newShape) as TNewShape;
   }
 
   pick<TPicked extends keyof T>(picked: { [Key in TPicked]: boolean }): ObjectV<
@@ -526,21 +549,31 @@ type TupleVIn<T extends TupleVItems | []> = AssertArray<{
   [K in keyof T]: T[K] extends UnknownVParser ? InferIn<T[K]> : never;
 }>;
 class TupleV<T extends TupleVItems> extends Parser<TupleVIn<T>, TupleVOut<T>> {
+  private _restParser: UnknownVParser | undefined;
+
   constructor(private parsers: T) {
     super();
   }
 
   parse(value: unknown): Result<TupleVOut<T>> {
     if (!Array.isArray(value)) return { success: false, error: `Not array` };
-    if (value.length !== this.parsers.length)
+    if (this._restParser === undefined && value.length !== this.parsers.length)
       return { success: false, error: `Not exact length` };
 
     const out = [];
 
     for (let i = 0; i < this.parsers.length; ++i) {
       const res = this.parsers[i].parse(value[i]);
-      if (!res.success) return { success: false, error: "" };
+      if (!res.success) return { success: false, error: res.error };
       out[i] = res.out;
+    }
+
+    if (this._restParser !== undefined) {
+      for (let i = this.parsers.length; i < value.length; ++i) {
+        const res = this._restParser.parse(value[i]);
+        if (!res.success) return { success: false, error: res.error };
+        out[i] = res.out;
+      }
     }
 
     return { success: true, out: out as TupleVOut<T> };
@@ -548,6 +581,13 @@ class TupleV<T extends TupleVItems> extends Parser<TupleVIn<T>, TupleVOut<T>> {
 
   index<Key extends keyof T>(index: Key): T[Key] {
     return this.parsers[index];
+  }
+
+  rest<TRestParser extends UnknownVParser>(
+    restParser: TRestParser,
+  ): TupleV<[...T, ...TRestParser[]]> {
+    this._restParser = restParser;
+    return this as unknown as TupleV<[...T, ...TRestParser[]]>;
   }
 }
 
@@ -579,6 +619,10 @@ class RecordV<T extends UnknownVParser> extends Parser<
     }
 
     return { success: true, out };
+  }
+
+  value(): T {
+    return this.parser;
   }
 }
 

@@ -113,6 +113,11 @@ schema.partial();
 schema.pick({ a: true });
 schema.omit({ a: true });
 schema.field("a");
+schema.extend({
+  a: v.number(),
+  c: v.string(),
+  b: v.boolean(),
+});
 ```
 
 ### UnionV
@@ -123,6 +128,32 @@ const result1 = schema.parse(1);
 const result2 = schema.parse("String");
 console.log(result1); // { success: true, out: 1 }
 console.log(result2); // { success: true, out: "String" }
+```
+
+### DiscriminatedUnionV
+
+```typescript
+type UserActionIn = InferIn<typeof userActionSchema>;
+type UserActionOut = InferOut<typeof userActionSchema>;
+
+const userActionSchema = v.discriminatedUnion("type", [
+  v.object({
+    type: v.literal("add"),
+    input: v.object({ name: v.string(), age: v.number() }),
+  }),
+  v.object({
+    type: v.literal("remove"),
+    input: v.object({ id: v.number() }),
+  }),
+  v.object({
+    type: v.literal("update"),
+    input: v.object({
+      id: v.number(),
+      name: v.string().optional(),
+      age: v.number().optional(),
+    }),
+  }),
+]);
 ```
 
 ### LiteralV
@@ -141,6 +172,7 @@ const result = schema.parse(["String", 1]);
 console.log(result); // { success: true, out: ["String", 1] }
 
 schema.index(0);
+schema.rest(v.boolean());
 ```
 
 ### RecordV
@@ -149,6 +181,8 @@ schema.index(0);
 const schema = v.record(v.string());
 const result = schema.parse({ key1: "value1", key2: "value2" });
 console.log(result); // { success: true, out: { key1: "value1", key2: "value2" } }
+
+schema.value();
 ```
 
 ### OptionalV
@@ -195,7 +229,7 @@ type Schema = InferOut<typeof schema>; // unknown
 console.log(result); // { success: true, out: "ok" }
 ```
 
-### Default
+### default
 
 ```typescript
 const schema = v.string().default("default string");
@@ -211,41 +245,6 @@ const schema = v.number();
 const result = await schema.parseAsync(2);
 type Schema = InferOut<typeof schema>; // number
 console.log(result); // { success: true, out: 2 }
-```
-
-### UnknownV
-
-```typescript
-const schema = v.unknown();
-const result = schema.parse("string value");
-type Schema = InferOut<typeof schema>; // unknown
-console.log(result); // { success: true, out: "string value" }
-```
-
-### DiscriminatedUnionV
-
-```typescript
-type UserActionIn = InferIn<typeof userActionSchema>;
-type UserActionOut = InferOut<typeof userActionSchema>;
-
-const userActionSchema = v.discriminatedUnion("type", [
-  v.object({
-    type: v.literal("add"),
-    input: v.object({ name: v.string(), age: v.number() }),
-  }),
-  v.object({
-    type: v.literal("remove"),
-    input: v.object({ id: v.number() }),
-  }),
-  v.object({
-    type: v.literal("update"),
-    input: v.object({
-      id: v.number(),
-      name: v.string().optional(),
-      age: v.number().optional(),
-    }),
-  }),
-]);
 ```
 
 This project was created using `bun init` in bun v1.0.11. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
