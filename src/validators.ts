@@ -580,6 +580,11 @@ class TupleV<T extends TupleVItems> extends Parser<TupleVIn<T>, TupleVOut<T>> {
   }
 
   index<Key extends keyof T>(index: Key): T[Key] {
+    // @ts-ignore
+    if (this._restParser !== undefined && index >= this.parsers.length) {
+      // @ts-ignore
+      return this._restParser;
+    }
     return this.parsers[index];
   }
 

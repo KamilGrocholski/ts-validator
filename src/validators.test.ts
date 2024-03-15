@@ -687,6 +687,16 @@ describe("Validators", () => {
       expectOut(input, result);
     });
 
+    test("Tuple rest index", () => {
+      const input = 1;
+      const result = v
+        .tuple([v.string()])
+        .rest(v.number())
+        .index(1)
+        .parse(input);
+      expectOut(input, result);
+    });
+
     test("Tuple index", () => {
       const input = "value";
       const result = v.tuple([v.string()]).index(0).parse(input);
