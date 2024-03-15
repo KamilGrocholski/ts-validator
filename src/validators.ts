@@ -485,7 +485,7 @@ class ObjectV<T extends UnknownObjectVParser> extends Parser<
     return new ObjectV(pickedShape);
   }
 
-  omit<TOmit extends keyof T>(omit: { [Key in TOmit]: boolean }): ObjectV<
+  omit<TOmit extends keyof T>(omit: { [Key in TOmit]: true }): ObjectV<
     Omit<T, TOmit>
   > {
     const omitShape = {} as { [Key in keyof T]: T[Key] };
