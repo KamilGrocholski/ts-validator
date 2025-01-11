@@ -15,23 +15,19 @@ type MakeUndefinedFieldsOptional<T extends object> = Expand<
   UndefinedProps<T> & Omit<T, keyof UndefinedProps<T>>
 >;
 
-export type InferIn<T extends UnknownVParser> = T extends Parser<
-  infer U,
-  infer _
->
-  ? U extends UnknownObjectVParser
-    ? MakeUndefinedFieldsOptional<{ [Key in keyof U]-?: InferIn<U[Key]> }>
-    : U
-  : never;
+export type InferIn<T extends UnknownVParser> =
+  T extends Parser<infer U, infer _>
+    ? U extends UnknownObjectVParser
+      ? MakeUndefinedFieldsOptional<{ [Key in keyof U]-?: InferIn<U[Key]> }>
+      : U
+    : never;
 
-export type InferOut<T extends UnknownVParser> = T extends Parser<
-  infer _,
-  infer U
->
-  ? U extends UnknownObjectVParser
-    ? MakeUndefinedFieldsOptional<{ [Key in keyof U]-?: InferOut<U[Key]> }>
-    : U
-  : never;
+export type InferOut<T extends UnknownVParser> =
+  T extends Parser<infer _, infer U>
+    ? U extends UnknownObjectVParser
+      ? MakeUndefinedFieldsOptional<{ [Key in keyof U]-?: InferOut<U[Key]> }>
+      : U
+    : never;
 
 export abstract class Parser<TIn, TOut> {
   protected defaultValue?: TOut;
@@ -231,7 +227,7 @@ class NumberV extends Parser<number, number> {
   }
 
   parse(value: unknown): Result<number> {
-    if (typeof value !== "number")
+    if (typeof value !== "number" || Number.isNaN(value))
       return { success: false, error: "Not number" };
 
     const parsedValue = value as number;

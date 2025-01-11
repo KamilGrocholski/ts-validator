@@ -169,6 +169,11 @@ describe("Validators", () => {
       expect(result.success).toBe(true);
     });
 
+    test("should not pass NaN as a number", () => {
+      const result = v.number().parse(NaN);
+      expect(result.success).toBe(false);
+    });
+
     test("Default number", () => {
       const result = v.date().default(123).parse();
       expect(result.success).toBe(true);
